@@ -24,8 +24,8 @@ export async function LegalPage({
   const written = language.code === 'he' ? 'he' : 'en';
   const doc = documents[written];
   const contact = contactAddress();
-  const officerName = process.env.NEXT_PUBLIC_ACCESSIBILITY_OFFICER?.trim() || null;
-  const officerPhone = process.env.NEXT_PUBLIC_ACCESSIBILITY_PHONE?.trim() || null;
+  const officerName = "Rafi Bhonker";
+  const officerPhone =  "+972 545 433 109" ;
 
   return (
     <article className="mx-auto max-w-4xl px-6 py-12" lang={written} dir={written === 'he' ? 'rtl' : 'ltr'}>
