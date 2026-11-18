@@ -64,7 +64,9 @@ export function PrimaryNav({ layout }: { layout: Layout }) {
       className={layout === 'bar' ? 'flex items-center gap-1' : 'flex flex-col gap-1'}
     >
       {PRIMARY.map(({ href, key, icon: Icon }) => {
-        const current = pathname.startsWith(href);
+        // /upload has archive sub-paths (e.g. /upload/recording) that belong to
+      // ArchiveNav; use exact match so they don't keep the contribute link lit.
+      const current = href === '/upload' ? pathname === href : pathname.startsWith(href);
         return (
           <Link
             key={href}
