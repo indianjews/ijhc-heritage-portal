@@ -45,8 +45,9 @@ import { BUCKETS, EXPERIMENT_COOKIE } from '@/lib/experiment';
  *                uploading straight to storage, which is what keeps a 50 MB
  *                scan off this server.
  *
- *   frame-src    `blob:` only — the lightbox embeds a locally chosen PDF. No
- *                remote frames anywhere in the archive.
+ *   frame-src    `blob:` for the PDF lightbox; `youtube-nocookie.com` for
+ *                archive recording embeds (privacy-enhanced player, no cookies
+ *                until the visitor presses play).
  *
  *   font-src     self. next/font downloads Google's files at build time and
  *                serves them from this origin, so nothing is fetched from Google
@@ -89,7 +90,7 @@ function contentSecurityPolicy(nonce: string, isDev: boolean): string {
     `media-src 'self' blob: ${supabase}`,
     `connect-src 'self' ${supabase}${sendHosts ? ` ${sendHosts}` : ''}${isDev ? ' ws: http://localhost:*' : ''}`,
     `font-src 'self'`,
-    `frame-src 'self' blob:`,
+    `frame-src 'self' blob: https://www.youtube-nocookie.com`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

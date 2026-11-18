@@ -701,6 +701,92 @@ export async function discardReviewDraft(itemId: string) {
   if (error) throw error;
 }
 
+// ── archive recording ──────────────────────────────────────────────────────
+
+export interface CreateRecordingInput {
+  /** The volunteer who is submitting — required (not null) for recordings. */
+  uploadedBy: string;
+  title: string;
+  /** A validated YouTube URL — the embed source of the recording. */
+  sourceUrl: string;
+  community: Community | null;
+  consentVersion: string;
+  /** Invitation images, already uploaded to storage. May be empty. */
+  files: CreateFileInput[];
+}
+
+/**
+ * Creates an archive-recording submission.
+ *
+ * Like createItem but:
+ *  - files are optional (Zoom/YouTube link is the primary media)
+ *  - category is pre-set to 'archive_recording' so it goes straight to review
+ *    with something a reviewer can confirm rather than fill in from scratch
+ *  - no AI analysis (the archive has not watched the video)
+ *  - uploadedBy is required — only volunteers reach this path
+ */
+export async function createRecordingItem(input: CreateRecordingInput): Promise<Item> {
+  const admin = createAdminSupabase();
+
+  const checksums: string[] = [];
+  for (const file of input.files) checksums.push(await storedChecksum(file.storagePath));
+
+  const { data: item, error: itemError } = await admin
+    .from('items')
+    .insert({
+      uploaded_by: input.uploadedBy,
+      title: input.title,
+      source_url: input.sourceUrl,
+      community: input.community,
+      category: 'archive_recording' as ItemCategory,
+      consent_version: input.consentVersion,
+      consent_at: new Date().toISOString(),
+      contributor_keywords: [],
+      status: 'pending' as ItemStatus,
+      access: 'public' as AccessLevel,
+    })
+    .select()
+    .single();
+
+  if (itemError) throw itemError;
+
+  if (input.files.length) {
+    const { error: fileError } = await admin.from('item_files').insert(
+      input.files.map((file, index) => ({
+        item_id: item.id,
+        storage_path: file.storagePath,
+        file_name: file.fileName,
+        mime_type: file.mimeType,
+        byte_size: file.byteSize,
+        checksum: checksums[index],
+        width: file.width,
+        height: file.height,
+        duration_ms: file.durationMs,
+        preview_path: file.previewPath,
+        position: index,
+        is_primary: index === 0,
+      })),
+    );
+
+    if (fileError) {
+      await admin.from('items').delete().eq('id', item.id);
+      throw fileError;
+    }
+  }
+
+  await admin.from('item_events').insert({
+    item_id: item.id,
+    actor_id: input.uploadedBy,
+    action: 'submitted',
+    to_status: 'pending',
+  });
+
+  const { error: duplicateError } = await admin.rpc('flag_item_duplicates', { p_item_id: item.id });
+  if (duplicateError) console.error('[items] duplicate flag failed', duplicateError);
+
+  return item as Item;
+}
+
 /** Vocabulary decisions remain separate from attaching a term to an item. */
 export async function decideReviewCandidate(itemId: string, id: string, action: 'create' | 'decline') {
   const candidates = await readReviewCandidates(itemId);

@@ -14,6 +14,7 @@ import {
   FolderPlus,
   UserPlus,
   Users,
+  Video,
 } from 'lucide-react';
 import type { Profile } from '@/lib/types';
 import { useMessages } from '@/lib/i18n/provider';
@@ -143,6 +144,7 @@ export function ArchiveNav({ profile, queueCount, layout }: NavProps & { layout:
 
   const links = [
     { href: '/review', label: t('nav.review'), icon: ClipboardCheck, count: queueCount },
+    { href: '/upload/recording', label: t('nav.addRecording'), icon: Video },
     { href: '/manage/vocabulary', label: t('nav.keywords'), icon: BookMarked },
     { href: '/manage/families', label: t('nav.families'), icon: Users },
     ...(isAdmin
