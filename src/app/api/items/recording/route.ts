@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { fail, invalid, ok, readJson, unexpected } from '@/lib/api';
 import { verifyGrant } from '@/lib/files/grant';
 import { createRecordingItem } from '@/lib/items/mutations';
+import { receiptFor } from '@/lib/items/receipt';
 import { COMMUNITIES } from '@/lib/types';
 import { youtubeVideoId } from '@/lib/links/youtube';
 import { getMessages } from '@/lib/i18n';
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       })),
     });
 
-    return ok({ id: item.id });
+    return ok({ id: item.id, token: receiptFor(item.id) });
   } catch (err) {
     return unexpected(err, 'POST /api/items/recording');
   }

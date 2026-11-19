@@ -86,9 +86,11 @@ function contentSecurityPolicy(nonce: string, isDev: boolean): string {
     // runs inside it is governed by the worker file's own headers, not this.
     "worker-src 'self'",
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' blob: data: ${supabase}${measured ? ' https://www.google-analytics.com https://www.googletagmanager.com' : ''}`,
+    // img.youtube.com serves video thumbnails used in the recording upload preview.
+    `img-src 'self' blob: data: https://img.youtube.com ${supabase}${measured ? ' https://www.google-analytics.com https://www.googletagmanager.com' : ''}`,
     `media-src 'self' blob: ${supabase}`,
-    `connect-src 'self' ${supabase}${sendHosts ? ` ${sendHosts}` : ''}${isDev ? ' ws: http://localhost:*' : ''}`,
+    // www.youtube.com/oembed is called client-side to auto-fill recording titles.
+    `connect-src 'self' https://www.youtube.com ${supabase}${sendHosts ? ` ${sendHosts}` : ''}${isDev ? ' ws: http://localhost:*' : ''}`,
     `font-src 'self'`,
     `frame-src 'self' blob: https://www.youtube-nocookie.com`,
     `object-src 'none'`,

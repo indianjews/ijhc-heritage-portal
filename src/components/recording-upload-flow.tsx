@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { GripVertical, X, Loader2, ExternalLink } from 'lucide-react';
 import { useMessages } from '@/lib/i18n/provider';
@@ -43,9 +43,24 @@ export function RecordingUploadFlow() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const dragOver = useRef<number | null>(null);
+  const lastFetchedId = useRef<string | null>(null);
 
   const videoId = youtubeVideoId(url);
   const urlValid = url.length === 0 || videoId !== null;
+
+  // Auto-fill title from YouTube oEmbed when a valid video ID is detected.
+  useEffect(() => {
+    if (!videoId || videoId === lastFetchedId.current) return;
+    lastFetchedId.current = videoId;
+    fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (typeof data.title === 'string' && data.title.trim()) {
+          setTitle((prev) => prev.trim() ? prev : data.title.trim());
+        }
+      })
+      .catch(() => { /* silently ignore — user can fill title manually */ });
+  }, [videoId]);
   const canContinue = videoId !== null && title.trim().length > 0;
 
   async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -157,7 +172,7 @@ export function RecordingUploadFlow() {
         throw new Error(data?.error?.message ?? 'Submission failed');
       }
 
-      router.push(`/receipt/${data.data.id}`);
+      router.push(`/review/${data.data.id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Submission failed');
       setSubmitting(false);
