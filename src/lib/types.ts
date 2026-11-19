@@ -1,6 +1,6 @@
 export type UserRole = 'pending' | 'volunteer' | 'admin';
 export type ItemStatus = 'pending' | 'accepted' | 'rejected' | 'shadow_gallery';
-export type ItemCategory = 'material_culture' | 'documents' | 'oral_histories';
+export type ItemCategory = 'material_culture' | 'documents' | 'oral_histories' | 'archive_recording';
 export type Community = 'bene_israel' | 'cochin' | 'baghdadi' | 'bnei_menashe' | 'general_india';
 export type AccessLevel = 'public' | 'restricted' | 'research' | 'administrative';
 /** `pending`: the item was sent on while its reading was still running (0032). */
@@ -232,6 +232,7 @@ export const CATEGORY_LABELS: Record<ItemCategory, string> = {
   material_culture: 'Material Culture',
   documents: 'Documents',
   oral_histories: 'Oral Histories',
+  archive_recording: 'Archive Recording',
 };
 
 export const COMMUNITY_LABELS: Record<Community, string> = {

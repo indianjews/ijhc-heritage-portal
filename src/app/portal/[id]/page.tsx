@@ -10,6 +10,8 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { ArrowLeft } from 'lucide-react';
 import { FilePreview } from '@/components/file-preview';
+import { YouTubeEmbed } from '@/components/youtube-embed';
+import { youtubeVideoId } from '@/lib/links/youtube';
 import { TranslationRequest } from '@/components/translation-request';
 import { CommunityMark } from '@/components/community-mark';
 import { Field } from '@/components/primitives';
@@ -95,38 +97,61 @@ export default async function RecordPage({
 
       <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr]">
         <div>
-          <div className="card animate-rise overflow-hidden rounded-2xl bg-paper-2 p-2">
-            {/* Never larger than the file itself. Stretched to fill the column,
-                a 567px scan stood 1269px wide on a 2560px screen and went soft
-                (Eden, 16.10). Below its own size it still fills the column. */}
-            <div className="flex min-h-80 items-center justify-center overflow-hidden rounded-2xl">
-              <FilePreview
-                file={file}
-                alt={item.title}
-                fit="contain"
-                eager
-                className="h-auto max-h-[80vh] w-auto max-w-full"
-              />
-            </div>
-          </div>
+          {item.category === 'archive_recording' && item.source_url && youtubeVideoId(item.source_url) ? (
+            <>
+              <div className="animate-rise overflow-hidden rounded-2xl">
+                <YouTubeEmbed url={item.source_url} title={item.title} />
+              </div>
+
+              {item.files.length > 0 && (
+                <div className="mt-4">
+                  <p className="eyebrow mb-2">{t('record.invitationImages')}</p>
+                  <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {item.files.map((img, index) => (
+                      <li key={img.id} className="overflow-hidden rounded-xl bg-paper-2">
+                        <FilePreview file={img} alt={`${item.title}, ${index + 1}`} fit="cover" still />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="card animate-rise overflow-hidden rounded-2xl bg-paper-2 p-2">
+                {/* Never larger than the file itself. Stretched to fill the column,
+                    a 567px scan stood 1269px wide on a 2560px screen and went soft
+                    (Eden, 16.10). Below its own size it still fills the column. */}
+                <div className="flex min-h-80 items-center justify-center overflow-hidden rounded-2xl">
+                  <FilePreview
+                    file={file}
+                    alt={item.title}
+                    fit="contain"
+                    eager
+                    className="h-auto max-h-[80vh] w-auto max-w-full"
+                  />
+                </div>
+              </div>
+
+              {/* A record can be a document scanned page by page. Every page is
+                  part of the record, so every page is on the page. */}
+              {item.files.length > 1 && (
+                <ul className="mt-3 grid grid-cols-4 gap-2">
+                  {item.files.map((page, index) => (
+                    <li key={page.id} className="card card-interactive overflow-hidden bg-paper-2">
+                      <div className="flex h-20 items-center justify-center overflow-hidden">
+                        <FilePreview file={page} alt={`${item.title}, ${index + 1}`} fit="cover" still />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
 
           <div className="mt-4 space-y-1 text-sm leading-relaxed text-muted" dir="auto">
             <p className="rounded-lg bg-paper px-3 py-2 text-ink">{creditText(item.collector_name, item.source, t)}</p>
           </div>
-
-          {/* A record can be a document scanned page by page. Every page is
-              part of the record, so every page is on the page. */}
-          {item.files.length > 1 && (
-            <ul className="mt-3 grid grid-cols-4 gap-2">
-              {item.files.map((page, index) => (
-                <li key={page.id} className="card card-interactive overflow-hidden bg-paper-2">
-                  <div className="flex h-20 items-center justify-center overflow-hidden">
-                    <FilePreview file={page} alt={`${item.title}, ${index + 1}`} fit="cover" still />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
 
         <div>

@@ -205,6 +205,7 @@ export const en = {
   'nav.closeMenu': 'Close the menu',
   'nav.portal': 'Explore',
   'nav.contribute': 'Add to the archive now',
+  'nav.addRecording': 'Add a recording',
   'nav.review': 'Review',
   'nav.manage': 'Manage',
   'nav.signIn': 'Sign in',
@@ -284,6 +285,7 @@ export const en = {
   'category.material_culture': 'Material Culture',
   'category.documents': 'Documents',
   'category.oral_histories': 'Oral Histories',
+  'category.archive_recording': 'Archive Recording',
   'category.none': 'Not catalogued',
 
   // ── the front door ────────────────────────────────────────────────────────
@@ -362,6 +364,25 @@ export const en = {
     'DEMO — SIMULATED. No AI model examined this file. Set GEMINI_API_KEY to get real analysis.',
   'streams.share': '{share}% of the four streams',
   'streams.communityNotIdentified': 'Community not yet identified',
+
+  // ── archive recording upload ───────────────────────────────────────────────
+  'upload.recording.title': 'Add an archive recording',
+  'upload.recording.eyebrow': 'For content experts',
+  'upload.recording.headline': 'Add a Zoom or YouTube recording',
+  'upload.recording.standfirst': 'Paste the YouTube link and add invitation images if you have them. The recording will go through the review queue before it is published.',
+  'upload.recording.urlLabel': 'YouTube or Zoom recording URL',
+  'upload.recording.urlHint': 'Must be a youtube.com or youtu.be link.',
+  'upload.recording.urlInvalid': 'This does not look like a YouTube link.',
+  'upload.recording.titleLabel': 'Recording title',
+  'upload.recording.communityLabel': 'Community (optional)',
+  'upload.recording.imagesLabel': 'Invitation images (optional)',
+  'upload.recording.imagesHint': 'Upload images of the event invitation. Drag to reorder — the first image is shown by default.',
+  'upload.recording.step.details': 'Recording details',
+  'upload.recording.step.consent': 'Confirm and submit',
+  'upload.recording.submit': 'Submit for review',
+  'upload.recording.submitting': 'Submitting…',
+  'record.watchRecording': 'Watch recording',
+  'record.invitationImages': 'Invitation images',
 
   // ── contributing ──────────────────────────────────────────────────────────
   'upload.title': "Upload",

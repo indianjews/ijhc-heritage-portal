@@ -14,6 +14,7 @@ import {
   FolderPlus,
   UserPlus,
   Users,
+  Video,
 } from 'lucide-react';
 import type { Profile } from '@/lib/types';
 import { useMessages } from '@/lib/i18n/provider';
@@ -63,7 +64,9 @@ export function PrimaryNav({ layout }: { layout: Layout }) {
       className={layout === 'bar' ? 'flex items-center gap-1' : 'flex flex-col gap-1'}
     >
       {PRIMARY.map(({ href, key, icon: Icon }) => {
-        const current = pathname.startsWith(href);
+        // /upload has archive sub-paths (e.g. /upload/recording) that belong to
+      // ArchiveNav; use exact match so they don't keep the contribute link lit.
+      const current = href === '/upload' ? pathname === href : pathname.startsWith(href);
         return (
           <Link
             key={href}
@@ -143,6 +146,7 @@ export function ArchiveNav({ profile, queueCount, layout }: NavProps & { layout:
 
   const links = [
     { href: '/review', label: t('nav.review'), icon: ClipboardCheck, count: queueCount },
+    { href: '/upload/recording', label: t('nav.addRecording'), icon: Video },
     { href: '/manage/vocabulary', label: t('nav.keywords'), icon: BookMarked },
     { href: '/manage/families', label: t('nav.families'), icon: Users },
     ...(isAdmin
