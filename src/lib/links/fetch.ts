@@ -2,6 +2,7 @@ import 'server-only';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import {
+  archiveUserAgent,
   captureKind,
   fileNameFor,
   isPrivateAddress,
@@ -127,7 +128,7 @@ async function guardedFetch(
         headers: {
           // Named honestly. A site that does not want an archive reading it can
           // say so, and a server that lies about who it is deserves what it gets.
-          'User-Agent': 'IJHC-Heritage-Archive/1.0 (+https://heritage-portal-snowy.vercel.app)',
+          'User-Agent': archiveUserAgent(),
           Accept: accept,
         },
       });

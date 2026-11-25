@@ -10,8 +10,10 @@
  *
  * Only writes when the body actually changed, so `updated:` stays honest.
  *
- *   node scripts/sync-vault.mjs           report what would change
- *   node scripts/sync-vault.mjs --apply   write it
+ *   OBSIDIAN_VAULT_PATH=/path/to/vault node scripts/sync-vault.mjs           report what would change
+ *   OBSIDIAN_VAULT_PATH=/path/to/vault node scripts/sync-vault.mjs --apply   write it
+ *
+ * Optional and personal: without OBSIDIAN_VAULT_PATH it exits without doing anything.
  *
  * The vault copies are GENERATED. Do not hand-edit them — the next run wins.
  * Anything the vault needs and the repo does not belongs in VAULT_ADDENDUM.
@@ -22,7 +24,13 @@ import path from 'node:path';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
 const SRC = path.join(REPO, 'PILOT WITH EREZ');
-const VAULT = 'C:/Users/inon1/OneDrive/מסמכים/Obsidian/inon';
+// The vault lives on whoever runs this script's own machine, so its location is
+// theirs to give, never written into the repository.
+const VAULT = process.env.OBSIDIAN_VAULT_PATH?.trim();
+if (!VAULT) {
+  console.log('OBSIDIAN_VAULT_PATH is not set; nothing to sync. Set it to the root of your Obsidian vault to use this script.');
+  process.exit(0);
+}
 const DST = path.join(VAULT, 'Freelance', 'IJHC', 'notes');
 
 const APPLY = process.argv.includes('--apply');
@@ -132,7 +140,7 @@ if (!existsSync(SRC)) {
   process.exit(1);
 }
 if (!existsSync(VAULT)) {
-  console.error(`Vault not reachable at ${VAULT}. Is OneDrive mounted?`);
+  console.error(`Vault not reachable at ${VAULT}. Check OBSIDIAN_VAULT_PATH.`);
   process.exit(1);
 }
 mkdirSync(DST, { recursive: true });
