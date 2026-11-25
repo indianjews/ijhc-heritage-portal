@@ -44,6 +44,7 @@ export default async function PortalPage({ searchParams }: { searchParams: Searc
   const filters = {
     ...Object.fromEntries(FACETS.filter(key => key !== 'category' && key !== 'community').map(key => [key, one(params[key])])),
     query, category, community, from: validDay(one(params.from)), to: validDay(one(params.to)),
+    person: one(params.person)?.trim().slice(0, 200) || undefined,
   };
   const perPage = 48;
   const [contributions, archiveTotal, { t }] = await Promise.all([

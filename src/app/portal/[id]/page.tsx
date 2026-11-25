@@ -1,4 +1,4 @@
-import { creditText } from '@/lib/files/credit-text';
+import { creditSegments } from '@/lib/files/credit-text';
 import Link from 'next/link';
 import { RecordEditLink } from '@/components/record-edit-link';
 import { RecordFeedback } from '@/components/record-feedback';
@@ -19,7 +19,7 @@ import { Reveal } from '@/components/reveal';
 import { GROUP_ORDER, fieldDef } from '@/lib/fields/registry';
 import { fieldLabel, groupLabelKey } from '@/lib/fields/labels';
 import { RelatedValue } from '@/components/related-value';
-import { discreteField, fieldValue, type Facet } from '@/lib/items/portal-facets';
+import { discreteField, fieldValue, personHref, type Facet } from '@/lib/items/portal-facets';
 import { getPublishedItem, getRelatedValueCounts, getKeywordLabels } from '@/lib/items/queries';
 import { present } from '@/lib/translate/render';
 import { listItemFamilies } from '@/lib/vocabulary/queries';
@@ -150,7 +150,29 @@ export default async function RecordPage({
           )}
 
           <div className="mt-4 space-y-1 text-sm leading-relaxed text-muted" dir="auto">
-            <p className="rounded-lg bg-paper px-3 py-2 text-ink">{creditText(item.collector_name, item.source, t)}</p>
+            <p className="rounded-lg bg-paper px-3 py-2 text-ink">
+              {creditSegments(item.collector_name, item.source, t).map((segment, index) => (
+                <span key={segment.kind}>
+                  {index > 0 && ' · '}
+                  {segment.name ? (
+                    <Link
+                      href={personHref(segment.name)}
+                      aria-label={t('record.personLink', { name: segment.name })}
+                      className="underline decoration-rule-strong underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      <bdi>{segment.text}</bdi>
+                    </Link>
+                  ) : (
+                    <bdi>{segment.text}</bdi>
+                  )}
+                </span>
+              ))}
+            </p>
+            {/* What the Terms of Use say, in one sentence, where the credit is read. */}
+            <p className="px-3">
+              {t('credit.rights')}{' '}
+              <Link href="/terms" className="underline underline-offset-2 hover:text-ink">{t('credit.terms')}</Link>
+            </p>
           </div>
         </div>
 
@@ -253,7 +275,15 @@ export default async function RecordPage({
               {shown.provenance ?? <span className="text-muted italic">{t('record.notRecorded')}</span>}
             </Field>
             <Field label={t('record.contributor')}>
-              {item.source ?? <span className="text-muted italic">{t('record.notRecorded')}</span>}
+              {item.source?.trim() ? (
+                <Link
+                  href={personHref(item.source)}
+                  aria-label={t('record.personLink', { name: item.source.trim() })}
+                  className="inline-flex min-h-11 max-w-full items-center text-accent underline decoration-rule-strong underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <bdi>{item.source}</bdi>
+                </Link>
+              ) : <span className="text-muted italic">{t('record.notRecorded')}</span>}
             </Field>
             {item.source_url && (
               <Field label={t('record.capturedFrom')} machine>

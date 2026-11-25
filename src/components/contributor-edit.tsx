@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMessages } from '@/lib/i18n/provider';
 
@@ -20,7 +20,12 @@ export function ContributorEditForm({ itemId, token, title, description }: {
   const action = useRef<HTMLButtonElement>(null);
   const titleInput = useRef<HTMLInputElement>(null);
   const wasOpen = useRef(false);
-  useEffect(() => {
+  // Layout, not passive: focus moves in the same commit that removes the form,
+  // so it is never left on <body> for a frame (a screen reader announces that),
+  // and nothing observing the DOM can see the new state before focus is set.
+  // As a passive effect it could run a task later on a busy machine, which is
+  // what made contributor-edit-render.test.tsx flaky (see contributor-edit-focus.test.tsx).
+  useLayoutEffect(() => {
     if (open) titleInput.current?.focus();
     else if (wasOpen.current) action.current?.focus();
     wasOpen.current = open;

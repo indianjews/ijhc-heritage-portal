@@ -3,7 +3,12 @@ import type { Community, ItemCategory } from '@/lib/types';
 
 export const FACETS = ['community', 'category', 'keyword', 'family', 'period', 'origin', 'kind', 'language', 'field'] as const;
 export type Facet = typeof FACETS[number];
-export type FacetFilters = Partial<Record<Facet, string>> & { from?: string; to?: string };
+export type FacetFilters = Partial<Record<Facet, string>> & {
+  from?: string;
+  to?: string;
+  /** A contributor or collector name, matched whole against `source` and `collector_name`. */
+  person?: string;
+};
 export interface FacetRow {
   id: string;
   created_at: string;
@@ -17,6 +22,9 @@ export interface FacetRow {
   item_fields: { field_key: string; value: string }[];
   item_files: { mime_type: string }[];
   item_families: { families: { id: string; name: string } | null }[];
+  /** The name shown as the record's contributor. Free text, as typed at upload. */
+  source?: string | null;
+  collector_name?: string | null;
 }
 export interface FacetOption { value: string; label: string; count: number }
 export type FacetOptions = Record<Facet, FacetOption[]>;
@@ -53,8 +61,30 @@ export function validDay(day: string | undefined): string | undefined {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === day ? day : undefined;
 }
 
+/**
+ * A name as it is compared: Unicode-normalised, spaces collapsed, case folded.
+ * Whole-name equality, not a substring, because these are free text and
+ * "Levi" must not also find "Levine".
+ */
+export function personKey(name: string | null | undefined): string {
+  return (name ?? '').normalize('NFC').replace(/\s+/g, ' ').trim().toLocaleLowerCase();
+}
+
+/** Whether a record names this person as its contributor or its collector. */
+export function matchesPerson(row: Pick<FacetRow, 'source' | 'collector_name'>, person: string | undefined): boolean {
+  const wanted = personKey(person);
+  if (!wanted) return true;
+  return personKey(row.source) === wanted || personKey(row.collector_name) === wanted;
+}
+
+/** The portal, filtered to everything published that names this person. */
+export function personHref(name: string): string {
+  return `/portal?${new URLSearchParams({ person: name.normalize('NFC').replace(/\s+/g, ' ').trim() })}`;
+}
+
 export function matchesFacets(row: FacetRow, filters: FacetFilters, except?: Facet): boolean {
   if (!FACETS.every(key => key === except || !filters[key] || facetValues(row, key).some(v => v.value === filters[key]))) return false;
+  if (!matchesPerson(row, filters.person)) return false;
   const from = validDay(filters.from);
   const to = validDay(filters.to);
   const day = row.reviewed_at?.slice(0, 10);
@@ -90,7 +120,7 @@ export function portalHref(key: string, value: string): string {
 }
 
 export function hasPortalFilters(filters: FacetFilters & { query?: string }): boolean {
-  return Boolean(filters.query?.trim() || FACETS.some(key => filters[key]) || validDay(filters.from) || validDay(filters.to));
+  return Boolean(filters.query?.trim() || filters.person?.trim() || FACETS.some(key => filters[key]) || validDay(filters.from) || validDay(filters.to));
 }
 
 export function pagination(total: number, requested: string | undefined, size = 48) {

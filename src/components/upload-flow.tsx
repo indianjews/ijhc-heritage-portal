@@ -2,6 +2,8 @@
 
 import { CollectorFields } from '@/components/collector-fields';
 import { uploadSignBody } from '@/lib/files/hash';
+import type { DuplicateHint } from '@/lib/files/duplicate-hint';
+import { DuplicateNotice, withBatchDuplicates } from '@/components/duplicate-notice';
 import { COMMUNITY_ORDER } from '@/lib/communities';
 import { communityKey } from '@/lib/i18n/labels';
 import { withContributorCommunity } from '@/lib/upload/community';
@@ -83,6 +85,10 @@ interface Analysed {
   analysisError: string | null;
   /** Sent on before its reading finished; the server reads it (0032). */
   pending?: boolean;
+  /** The file's SHA-256, as sent to /api/uploads/sign; finds the same file twice in one upload. */
+  checksum?: string;
+  /** This signed-in user uploaded the same bytes before (from /api/uploads/sign). Never blocks. */
+  duplicate?: DuplicateHint;
 }
 
 type Grouping = 'one' | 'separate';
@@ -493,10 +499,11 @@ export function UploadFlow({
     const { file } = picked;
     const durationMs = await measureDuration(file);
 
+    const signBody = await uploadSignBody(file);
     const signRes = await fetch('/api/uploads/sign', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(await uploadSignBody(file)),
+      body: JSON.stringify(signBody),
     });
     const signed = await signRes.json().catch(() => null);
     if (!signed) throw new Error(t('error.didNotGoThrough'));
@@ -532,7 +539,7 @@ export function UploadFlow({
 
     // The browser already drew a thumbnail for a format it can draw; keep it,
     // so nothing flickers while the signed rendition URL loads.
-    return { ...analysed, previewUrl: analysed.previewUrl ?? picked.previewUrl };
+    return { ...analysed, previewUrl: analysed.previewUrl ?? picked.previewUrl, checksum: signBody.checksum, duplicate: signed.data.duplicate ?? null };
   }
 
   async function runAnalysis(withoutWaiting = false) {
@@ -1349,6 +1356,8 @@ export function UploadFlow({
           dir={reading && reading.code !== siteLanguage ? (reading.rtl ? 'rtl' : 'ltr') : undefined}
         >
           {heading(tFlow('flow.s3.title'), tFlow('flow.s3.hint'), tFlow)}
+
+          <DuplicateNotice files={withBatchDuplicates(analysed)} />
 
           {error && (
             <p role="alert" className="mt-5 rounded-lg border-s-[3px] border-critical bg-critical/8 px-4 py-3.5 text-critical">
