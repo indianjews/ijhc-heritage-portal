@@ -28,7 +28,7 @@
  * 3. **It is plain language, not a legal instrument.** Nobody with a law degree
  *    has read it. An archive that publishes family material under an
  *    institution's name, in a jurisdiction with a privacy statute, should have
- *    one do so. Noted in `../PILOT WITH EREZ/09 — Open Questions.md`.
+ *    one do so. Recorded as an open question for the Center.
  */
 
 /*

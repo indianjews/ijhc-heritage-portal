@@ -9,12 +9,13 @@
 
 | מה | איפה |
 |---|---|
-| הקוד (העותק הראשי של ינון) | `C:\Users\inon1\Desktop\SelfEmployee\IJHC\heritage-portal` |
+| הקוד | עותק מקומי (clone) של המאגר שבשורה "מאגר הקוד" |
 | עותקי עבודה של הסוכנים | `..\ijhc-autofix` (סוכן התיקונים), `..\ijhc-p2a`, `..\ijhc-p3r`, `..\ijhc-p3p` (שלבי הבנייה של 20.10, אפשר להסיר אחרי פריסה) |
-| המסמכים של הפרויקט (מקור האמת) | `..\PILOT WITH EREZ\` - מפרט, ארכיטקטורה, מודל נתונים, הרשאות, החלטות, PROGRESS |
+| המסמכים של הפרויקט | `docs/` במאגר (מתחילים ב-`docs/CODEBASE-GUIDE.md`). **ישן:** התיקייה `PILOT WITH EREZ` הייתה התיעוד האישי של המפתח המקורי, מחוץ לגיט, ואינה עוד מקור האמת |
 | מדריכים וסרטונים | `..\DOCS\` - PDF, Word, `videos\`, והצינור שבונה אותם ב-`_build\` |
-| האתר החי | https://heritage-portal-snowy.vercel.app |
-| מאגר הקוד | github.com/inon1030/ijhc-heritage-portal |
+| האתר החי | https://archive.indianjews.org |
+| ישן (לא בשימוש) | `heritage-portal-snowy.vercel.app` - הפריסה האישית של המפתח המקורי. אינו האתר הראשי, לא פורסים אליו |
+| מאגר הקוד | github.com/indianjews/ijhc-heritage-portal |
 | אחסון | Vercel, הפרויקט `ijhc-heritage-portal` (צוות indianjews) |
 | מסד נתונים וקבצים | Supabase, פרויקט `llfwnitakmhuyexvqvft` |
 | סודות | `.env.local` בתיקיית הקוד, ועותק בהגדרות Vercel. לא בגיט ולא בצ'אט |
@@ -42,7 +43,7 @@
 | איפוס סיסמה במייל | `/login` → "שכחת את הסיסמה?" |
 | ניהול חשבונות, פח, משפחות, אוצר מילים ותקלות | `/manage` |
 
-**מי רשאי מה** (הכרעות של ינון מ-20.10): אדמין עורך ומוחק כל רשומה. מומחה תוכן עובד על כל פריט בתור, אבל ברשומה שכבר פורסמה רק אם הוא העלה אותה או אישר אותה. אין "סופר אדמין" נפרד. הטבלה המלאה נמצאת ב-`PILOT WITH EREZ\04 — Permissions and Security.md`.
+**מי רשאי מה** (הכרעות של ינון מ-20.10): אדמין עורך ומוחק כל רשומה. מומחה תוכן עובד על כל פריט בתור, אבל ברשומה שכבר פורסמה רק אם הוא העלה אותה או אישר אותה. אין "סופר אדמין" נפרד. הסיכום נמצא ב-`docs/CODEBASE-GUIDE.md` (סעיפים 2 ו-4) וההכרעות ב-`docs/decisions-2010.md`.
 
 ## 3. איך עובדים איתה
 
@@ -50,8 +51,8 @@
 |---|---|
 | להריץ מקומית | `npm run dev` בתיקיית הקוד. **זה מחובר למסד החי**, אז לא מוחקים ולא מעלים פריטי בדיקה בלי לנקות אחרי |
 | לבדוק לפני קומיט | `npm run verify`: טיפוסים, lint, 554 טסטים ו-build. אדום = לא מקמטים |
-| לפרוס | יש שני פרויקטים ב-Vercel, ושניהם קוראים מאותו מסד. **האתר הראשי הוא heritage-portal-snowy.vercel.app**, בחשבון של ינון (החלטה מ-21.10). הוא עולה רק דרך `npx vercel --prod --yes` מתיקיית הקוד הראשית. **ijhc-heritage-portal.vercel.app**, בחשבון של העמותה, עולה לבד בכל `git push` ל-`master`, ואת הקרונים (גיבוי, תרגום, קריאה חוזרת) מריץ רק הוא. בכל אחד מהם יכול להיות מפתח Gemini אחר |
-| לחזור לגרסה קודמת | `npx vercel rollback --yes` (ראו `docs/RUNBOOK.md`) |
+| לפרוס | האתר הראשי הוא **https://archive.indianjews.org**: הפרויקט `ijhc-heritage-portal` בצוות `indianjews` ב-Vercel. הוא עולה לבד בכל `git push` ל-`master`, והוא בית הקרונים (גיבוי, תרגום, קריאה חוזרת; `CRON_HOME=1`). פריסה ידנית: `npx vercel link --scope indianjews --project ijhc-heritage-portal` פעם אחת, ואז `npx vercel --prod --yes --scope indianjews`. **ישן:** `heritage-portal-snowy.vercel.app` (חשבון אישי של המפתח המקורי) אינו האתר הראשי; אם הוא עדיין רץ מול אותו מסד, אסור שיוגדר בו `CRON_HOME=1` |
+| לחזור לגרסה קודמת | `npx vercel rollback --yes --scope indianjews` (ראו `docs/RUNBOOK.md`) |
 | לשנות את מסד הנתונים | מיגרציה חדשה ב-`supabase/migrations/00NN_*.sql`, מורצת ידנית בעורך ה-SQL של Supabase בתוך `begin; … commit;`, **לפני** הדחיפה של הקוד שצריך אותה |
 | להוסיף טקסט למסך | מפתח ב-`src/lib/i18n/messages.ts` (אנגלית) וב-`locales/he.json` (עברית), בכתב יד. `npm run i18n` מתרגם להינדי, מראטהית ומלאיאלאם, ועולה קריאות ג'מיני |
 | לטפל בבאג מהעמותה | הסוכן `ijhc-fixer` קורא את הגיליון והמיילים, מתקן בענף `fixes/<id>` ולא פורס. את ההחלטה לפרוס מקבל ינון |

@@ -151,3 +151,19 @@ export function fileNameFor(url: URL, mimeType: string): string {
   const base = cleaned || url.hostname.replace(/^www\./, '');
   return `${base}.${extension}`;
 }
+
+/** The archive's public address, used when no site URL is configured. */
+export const ARCHIVE_ORIGIN = 'https://archive.indianjews.org';
+
+/**
+ * The User-Agent the archive fetches links with.
+ *
+ * Named honestly, with the address a site owner can visit to see who is
+ * reading them. `NEXT_PUBLIC_SITE_URL` when it is set (without a trailing
+ * slash), otherwise the Center's production domain — never a developer's
+ * personal deployment.
+ */
+export function archiveUserAgent(siteUrl: string | undefined = process.env.NEXT_PUBLIC_SITE_URL): string {
+  const origin = siteUrl?.trim().replace(/\/+$/, '') || ARCHIVE_ORIGIN;
+  return `IJHC-Heritage-Archive/1.0 (+${origin})`;
+}

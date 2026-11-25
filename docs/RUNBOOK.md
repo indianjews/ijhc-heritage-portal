@@ -4,8 +4,9 @@ For whoever is holding this at 02:00. No context assumed.
 
 | | |
 |---|---|
-| Live site | https://heritage-portal-snowy.vercel.app |
-| Hosting | Vercel, project `heritage-portal`, org `e-m1` |
+| Live site | https://archive.indianjews.org |
+| Hosting | Vercel, project `ijhc-heritage-portal`, team `indianjews` (deploys every push to `master`; it is the cron home, `CRON_HOME=1`) |
+| Legacy (deprecated) | `heritage-portal-snowy.vercel.app` — the original developer's personal deployment. Not production; do not deploy to it or diagnose from it |
 | Database + files | Supabase project `llfwnitakmhuyexvqvft` (`ijhc-heritage-portal`), eu-central-1 |
 | Code | `heritage-portal/` in this repository. `../project/` is the old demo — **never deploy it** |
 | Secrets | `.env.local`, not in git. Vercel holds its own copy in project settings |
@@ -17,10 +18,10 @@ For whoever is holding this at 02:00. No context assumed.
 Run these before changing anything. All four should answer as shown.
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://heritage-portal-snowy.vercel.app/
-curl -s -o /dev/null -w '%{http_code}\n' https://heritage-portal-snowy.vercel.app/portal
-curl -s https://heritage-portal-snowy.vercel.app/portal | grep -oE 'href="/portal/[0-9a-f-]{36}"' | sort -u | wc -l
-curl -s -o /dev/null -w '%{http_code}\n' -X POST https://heritage-portal-snowy.vercel.app/api/analyze -H 'content-type: application/json' -d '{"path":"x"}'
+curl -s -o /dev/null -w '%{http_code}\n' https://archive.indianjews.org/
+curl -s -o /dev/null -w '%{http_code}\n' https://archive.indianjews.org/portal
+curl -s https://archive.indianjews.org/portal | grep -oE 'href="/portal/[0-9a-f-]{36}"' | sort -u | wc -l
+curl -s -o /dev/null -w '%{http_code}\n' -X POST https://archive.indianjews.org/api/analyze -H 'content-type: application/json' -d '{"path":"x"}'
 ```
 
 Expected: `200`, `200`, `9` or more, `400`. A `500` on the first two, or
@@ -43,14 +44,14 @@ Supabase paused for inactivity on the free plan.
 The safest action and almost always the right first one. It does not touch data.
 
 ```bash
-npx vercel rollback --yes
+npx vercel rollback --yes --scope indianjews
 ```
 
 That promotes the previous production deployment. To pick a specific one:
 
 ```bash
-npx vercel ls heritage-portal
-npx vercel promote <deployment-url>
+npx vercel ls ijhc-heritage-portal --scope indianjews
+npx vercel promote <deployment-url> --scope indianjews
 ```
 
 **Verify after:** re-run the four checks above. The site should serve the
@@ -63,8 +64,9 @@ cd heritage-portal
 git log --oneline -10            # find the commit you want
 git checkout <sha>
 npm ci                           # the lockfile is the pinned set — do not npm install
-npm run verify                   # typecheck + lint + 139 tests, all must pass
-npx vercel --prod --yes
+npm run verify                   # typecheck + lint + tests + build, all must pass
+npx vercel link --yes --scope indianjews --project ijhc-heritage-portal   # once per checkout
+npx vercel --prod --yes --scope indianjews
 ```
 
 ---
