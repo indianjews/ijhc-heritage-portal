@@ -130,3 +130,38 @@ it('scopes option counts to the public search result and an optional contributor
   expect((await getPortalFacetOptions({query:'Ezra'})).community[0].count).toBe(1);
   expect((await getPortalFacetOptions({},[])).community).toEqual([]);
 });
+
+describe('quoted search (#15)', () => {
+  beforeEach(() => {
+    state.tables.items = [
+      base('phrase', { title: 'The Ezra Synagogue in Pune' }),
+      base('scattered', { title: 'Synagogue records', description: 'Letters from the Ezra family' }),
+      base('acronym', { title: 'ד"ר כהן בבית הכנסת' }),
+      base('hidden-phrase', { status: 'pending', title: 'The Ezra Synagogue, unpublished' }),
+    ];
+    state.tables.item_families = [];
+    state.tables.item_fields = [];
+    state.tables.item_translations = [];
+  });
+
+  it('finds a quoted phrase instead of searching for the quotation marks', async () => {
+    expect((await listPublishedItems({ query: '"Ezra synagogue"' })).map((r) => r.id)).toEqual(['phrase']);
+    expect(await countPublishedItems({ query: '“Ezra synagogue”' })).toBe(1);
+    // The term sent to the database carries no quotation mark.
+    const terms = state.calls.filter((c) => c.method === 'ilike').map((c) => String(c.args[1]));
+    expect(terms.some((t) => t.includes('ezra synagogue'))).toBe(true);
+    expect(terms.some((t) => /["“”]/.test(t))).toBe(false);
+  });
+
+  it('keeps unquoted words as separate AND terms', async () => {
+    expect((await listPublishedItems({ query: 'Ezra synagogue' })).map((r) => r.id).sort()).toEqual(['phrase', 'scattered']);
+  });
+
+  it('keeps a Hebrew acronym’s quotation mark, so ד"ר is still found', async () => {
+    expect((await listPublishedItems({ query: 'ד"ר כהן' })).map((r) => r.id)).toEqual(['acronym']);
+  });
+
+  it('never returns an unpublished record for a phrase either', async () => {
+    expect((await listPublishedItems({ query: '"Ezra synagogue"' })).map((r) => r.id)).not.toContain('hidden-phrase');
+  });
+});

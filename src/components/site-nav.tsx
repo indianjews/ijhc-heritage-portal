@@ -13,6 +13,7 @@ import {
   Trash2,
   FolderPlus,
   Upload,
+  MessageSquareWarning,
   UserPlus,
   Users,
   Video,
@@ -142,9 +143,9 @@ export function AccountNav({ profile, layout }: { profile: Profile | null; layou
  * Whether an archive link is the page being shown.
  *
  * By prefix, so /review/<id> keeps "Review" lit — except where a sub-path has
- * a link of its own: on /review/bulk-upload only "Bulk upload" is lit.
+ * a link of its own: on /review/bulk-upload or /review/corrections only that link is lit.
  */
-const OWN_LINK_SUBPATHS = ['/review/bulk-upload'];
+const OWN_LINK_SUBPATHS = ['/review/bulk-upload', '/review/corrections'];
 export function archiveLinkCurrent(href: string, pathname: string): boolean {
   if (!(pathname === href || pathname.startsWith(href + '/'))) return false;
   return !OWN_LINK_SUBPATHS.some((sub) => sub !== href && sub.startsWith(href + '/') && (pathname === sub || pathname.startsWith(sub + '/')));
@@ -160,6 +161,7 @@ export function ArchiveNav({ profile, queueCount, layout }: NavProps & { layout:
   const links = [
     { href: '/review', label: t('nav.review'), icon: ClipboardCheck, count: queueCount },
     { href: '/review/bulk-upload', label: t('nav.bulkUpload'), icon: Upload },
+    { href: '/review/corrections', label: t('nav.corrections'), icon: MessageSquareWarning },
     { href: '/upload/recording', label: t('nav.addRecording'), icon: Video },
     { href: '/manage/vocabulary', label: t('nav.keywords'), icon: BookMarked },
     { href: '/manage/families', label: t('nav.families'), icon: Users },

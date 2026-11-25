@@ -105,8 +105,34 @@ export function facetOptions(rows: FacetRow[], filters: FacetFilters = {}): Face
   })) as FacetOptions;
 }
 
+/** Characters people type as quotation marks, in English and Hebrew. */
+const QUOTES = '"\u201C\u201D\u201E\u00AB\u00BB\u05F4';
+const QUOTED_PHRASE = new RegExp(`(^|\\s)[${QUOTES}]([^${QUOTES}]+)[${QUOTES}](?=\\s|$)`, 'gu');
+const EDGE_QUOTES = new RegExp(`^[${QUOTES}]+|[${QUOTES}]+$`, 'gu');
+
+/**
+ * The terms a portal search is made of. Every term must match (AND); each is
+ * matched as a substring with `ilike`.
+ *
+ * Words in quotes are one term — `"Ezra synagogue"` finds that phrase, not
+ * every record with both words. A quotation mark only counts at the edge of a
+ * word: inside one it is part of the word, because Hebrew writes acronyms
+ * with it (ד"ר, ביה"כ), and searching for those must keep working. A quote
+ * left unclosed is dropped rather than searched for.
+ */
 export function searchWords(query: string): string[] {
-  return [...new Set(query.trim().toLowerCase().split(/\s+/u).filter(Boolean))];
+  const text = query.normalize('NFC').toLowerCase();
+  const terms: string[] = [];
+  const rest = text.replace(QUOTED_PHRASE, (_whole, lead: string, phrase: string) => {
+    const clean = phrase.replace(/\s+/gu, ' ').trim();
+    if (clean) terms.push(clean);
+    return lead + ' ';
+  });
+  for (const word of rest.split(/\s+/u)) {
+    const clean = word.replace(EDGE_QUOTES, '');
+    if (clean) terms.push(clean);
+  }
+  return [...new Set(terms)];
 }
 
 export function intersectIds(groups: string[][]): string[] {

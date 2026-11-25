@@ -55,9 +55,14 @@ export default async function ReviewPage() {
           {t('queue.intro')}
         </p>
         {volunteer && (
-          <Link href="/review/bulk-upload" className={buttonClass('primary', 'mt-6')}>
-            {t('bulk.openFromQueue')}
-          </Link>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/review/bulk-upload" className={buttonClass('primary')}>
+              {t('bulk.openFromQueue')}
+            </Link>
+            <Link href="/review/corrections" className={buttonClass('quiet')}>
+              {t('nav.corrections')}
+            </Link>
+          </div>
         )}
       </header>
 

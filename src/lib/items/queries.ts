@@ -70,6 +70,30 @@ export async function readRecordCorrections(itemId?: string): Promise<RecordCorr
   });
 }
 
+export interface RecordReport {
+  id: string; item_id: string; reason: import('./public-input').ReportReason; body: string | null;
+  reporter_name: string | null; reporter_email: string | null; anonymous: boolean; created_at: string; record_title: string | null;
+}
+
+/**
+ * Open private problem reports (0042), for /review/corrections only.
+ *
+ * Experts only, three times over: this returns nothing without an approved
+ * session, RLS returns nothing to anyone else, and the page checks the role.
+ * The public record page never calls this.
+ */
+export async function readRecordReports(): Promise<RecordReport[]> {
+  if (!await getCurrentVolunteer()) return [];
+  const { data, error } = await (await createServerSupabase()).from('record_reports')
+    .select('id,item_id,reason,body,reporter_name,reporter_email,anonymous,created_at,record:items(title)')
+    .eq('status', 'open').order('created_at').range(0, 199);
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const { record, ...report } = row;
+    return { ...report, record_title: (record as unknown as { title: string } | null)?.title ?? null } as RecordReport;
+  });
+}
+
 /** Server-only mail projection. No route or component serializes these addresses. */
 export async function readFeedbackRecipients(item: Item): Promise<{ email: string; language: string | null; uploader: boolean }[]> {
   const admin = createAdminSupabase();

@@ -3,7 +3,7 @@ import { useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { buttonClass } from './primitives';
 import { useMessages } from '@/lib/i18n/provider';
-import type { CorrectionField } from '@/lib/items/public-input';
+import { REPORT_REASONS, type CorrectionField, type ReportReason } from '@/lib/items/public-input';
 import type { PublicComment } from '@/lib/items/queries';
 
 const inputClass = 'min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong';
@@ -32,10 +32,19 @@ export function RecordFeedback({ itemId, token, fields, comments, expert, locale
       <p className="my-4 text-muted">{t('public.correctionHint')}</p>
       <FeedbackForm itemId={itemId} token={token} fields={fields} />
     </details>
+    {/*
+      Private: stored apart from comments (0042), read only by content experts
+      in /review/corrections, never rendered on this page.
+    */}
+    <details className="mt-4 rounded-xl border border-rule p-4">
+      <summary className="min-h-11 cursor-pointer py-2 font-medium focus-visible:outline-2">{t('report.summary')}</summary>
+      <p className="my-4 text-muted">{t('report.hint')}</p>
+      <FeedbackForm itemId={itemId} token={token} report />
+    </details>
   </section>;
 }
 
-function FeedbackForm({ itemId, token, fields }: { itemId: string; token: string; fields?: CorrectionField[] }) {
+function FeedbackForm({ itemId, token, fields, report = false }: { itemId: string; token: string; fields?: CorrectionField[]; report?: boolean }) {
   const t = useMessages();
   const router = useRouter();
   const prefix = useId();
@@ -43,6 +52,7 @@ function FeedbackForm({ itemId, token, fields }: { itemId: string; token: string
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [sent, setSent] = useState(false);
+  const [reason, setReason] = useState<ReportReason | ''>('');
   const submitting = useRef(false);
   return <form className="mt-6 space-y-4" onSubmit={async event => {
     event.preventDefault();
@@ -55,6 +65,7 @@ function FeedbackForm({ itemId, token, fields }: { itemId: string; token: string
       const response = await fetch(`/api/records/${itemId}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, anonymous, name: values.get('name') ?? '', email: values.get('email') ?? '',
           website: values.get('website'), body: values.get('body'),
+          ...(report ? { reason } : {}),
           ...(fields ? {
             values: Object.fromEntries(fields.filter(field => String(values.get(field.key) ?? '').trim() !== field.value)
               .map(field => [field.key, values.get(field.key)])),
@@ -62,13 +73,18 @@ function FeedbackForm({ itemId, token, fields }: { itemId: string; token: string
           } : {}) }) });
       const result = await response.json();
       if (!result.ok) { setMessage(result.error.message); return; }
-      setSent(true); setMessage(t(fields ? 'public.proposed' : 'public.saved'));
+      setSent(true); setMessage(t(report ? 'report.sent' : fields ? 'public.proposed' : 'public.saved'));
       router.refresh();
     } catch { setMessage(t('public.failed')); }
     finally { submitting.current = false; setBusy(false); }
   }}>
     <fieldset disabled={busy || sent} className="min-w-0 space-y-4">
-      <legend className="mb-3 font-medium">{t(fields ? 'public.correction' : 'public.comment')}</legend>
+      <legend className="mb-3 font-medium">{t(report ? 'report.summary' : fields ? 'public.correction' : 'public.comment')}</legend>
+      {report && <label className="block"><span className="mb-2 block">{t('report.reason')}</span>
+        <select name="reason" required value={reason} onChange={e => setReason(e.target.value as ReportReason | '')} className={inputClass}>
+          <option value="">{t('report.choose')}</option>
+          {REPORT_REASONS.map(value => <option key={value} value={value}>{t(`report.reason.${value}`)}</option>)}
+        </select></label>}
       {fields?.map(field => <label key={field.key} className="block">
         <span className="mb-2 block">{field.label}</span>
         {field.options ? <select name={field.key} defaultValue={field.value} className={inputClass}>
@@ -88,8 +104,8 @@ function FeedbackForm({ itemId, token, fields }: { itemId: string; token: string
       </div>}
       <div hidden aria-hidden="true"><label htmlFor={`${prefix}-website`}>{t('public.website')}</label>
         <input id={`${prefix}-website`} name="website" tabIndex={-1} autoComplete="off" /></div>
-      <label className="block"><span className="mb-2 block">{t(fields ? 'public.note' : 'public.body')}</span>
-        <textarea name="body" required={!fields} maxLength={2000} rows={4} dir="auto" className={inputClass} /></label>
+      <label className="block"><span className="mb-2 block">{t(report ? 'report.details' : fields ? 'public.note' : 'public.body')}</span>
+        <textarea name="body" required={report ? reason === 'other' : !fields} maxLength={2000} rows={4} dir="auto" className={inputClass} /></label>
       <button type="submit" className={buttonClass('accent')}>{t(busy ? 'public.sending' : 'public.submit')}</button>
     </fieldset>
     <p role="status" aria-live="polite" className="break-words">{message}</p>

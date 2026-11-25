@@ -1,5 +1,5 @@
 import type { Mail } from './index';
-import { en } from '@/lib/i18n/messages';
+import { en, type MessageKey } from '@/lib/i18n/messages';
 import he from '@/lib/i18n/locales/he.json';
 import { reader, resolve } from '@/lib/i18n';
 import type { CorrectionChanges } from '@/lib/items/public-input';
@@ -7,22 +7,25 @@ import { fieldDef } from '@/lib/fields/registry';
 import { fieldLabel } from '@/lib/fields/labels';
 
 export function recordFeedbackMail(input: {
-  to: string; language: string | null; title: string; kind: 'comment' | 'correction';
+  to: string; language: string | null; title: string; kind: 'comment' | 'correction' | 'report';
   body: string; changes?: CorrectionChanges; publicUrl: string; objectionUrl?: string;
+  /** For a private report: why, and where experts decide it. */
+  reason?: string; reviewUrl?: string;
 }): Mail {
   const languages = input.language ? [input.language] : ['he', 'en'];
   const parts = languages.map(language => {
     const t = reader(resolve(language));
-    const title = t(input.kind === 'comment' ? 'public.mailComment' : 'public.mailCorrection', { title: input.title });
+    const title = t(input.kind === 'comment' ? 'public.mailComment' : input.kind === 'report' ? 'report.mailTitle' : 'public.mailCorrection', { title: input.title });
     const changes = Object.entries(input.changes ?? {}).map(([key, value]) => {
       const def = key.startsWith('field:') ? fieldDef(key.slice(6)) : null;
       const label = def ? fieldLabel(t, def) : key === 'title' ? t('public.title') : key === 'description' ? t('public.description') :
         key === 'period' ? t('record.period') : t('record.placeOfOrigin');
       return `${label}: ${value.from || t('public.none')} → ${value.to || t('public.none')}`;
     });
-    const summary = [...changes, input.body].filter(Boolean).join('\n');
-    return { title, text: `${title}\n\n${summary}\n\n${t('public.view')}: ${input.publicUrl}${input.objectionUrl ? `\n${t('public.object')}: ${input.objectionUrl}` : ''}`,
-      html: `<section lang="${language === 'he' ? 'he' : 'en'}" dir="${language === 'he' ? 'rtl' : 'ltr'}"><h2>${escape(title)}</h2><p style="white-space:pre-wrap">${escape(summary)}</p>${button(input.publicUrl, t('public.view'))}${input.objectionUrl ? button(input.objectionUrl, t('public.object')) : ''}</section>` };
+    const reason = input.kind === 'report' && input.reason ? `${t('report.reason')}: ${t(`report.reason.${input.reason}` as MessageKey)}` : '';
+    const summary = [reason, ...changes, input.body].filter(Boolean).join('\n');
+    return { title, text: `${title}\n\n${summary}\n\n${t('public.view')}: ${input.publicUrl}${input.objectionUrl ? `\n${t('public.object')}: ${input.objectionUrl}` : ''}${input.reviewUrl ? `\n${t('report.open')}: ${input.reviewUrl}` : ''}`,
+      html: `<section lang="${language === 'he' ? 'he' : 'en'}" dir="${language === 'he' ? 'rtl' : 'ltr'}"><h2>${escape(title)}</h2><p style="white-space:pre-wrap">${escape(summary)}</p>${button(input.publicUrl, t('public.view'))}${input.objectionUrl ? button(input.objectionUrl, t('public.object')) : ''}${input.reviewUrl ? button(input.reviewUrl, t('report.open')) : ''}</section>` };
   });
   return { to: input.to, subject: parts.map(p => p.title).join(' · '), text: parts.map(p => p.text).join('\n\n'),
     html: `<!doctype html><html><body style="background:#fff;color:#1f1d1a;font:18px/1.6 Arial,sans-serif"><main style="max-width:560px;margin:auto;padding:24px">${parts.map(p => p.html).join('<hr>')}</main></body></html>` };

@@ -7,6 +7,10 @@ export const CollectorInput = z.object({
   collectorCreditRequired: z.boolean(),
 }).refine(v => !v.collectorCreditRequired || Boolean(v.collectorName), { path: ['collectorName'] });
 
+/** Why a visitor reports a record privately. Mirrors the check in migration 0042. */
+export const REPORT_REASONS = ['mistake', 'living_person', 'rights', 'offensive', 'other'] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
 export const PublicInput = z.object({
   anonymous: z.boolean(),
   name: z.string().trim().max(120).default(''),
@@ -16,7 +20,17 @@ export const PublicInput = z.object({
   body: z.string().trim().max(2000).default(''),
   values: z.record(z.string().max(120), z.string().trim().max(4000)).optional(),
   originals: z.record(z.string().max(120), z.string().max(4000)).optional(),
-}).refine(v => v.anonymous || (v.name.length >= 2 && z.email().safeParse(v.email).success));
+  /** Present only for a private problem report (0042); never shown on the record. */
+  reason: z.enum(REPORT_REASONS).optional(),
+}).refine(v => v.anonymous || (v.name.length >= 2 && z.email().safeParse(v.email).success))
+  .refine(v => !(v.reason && v.values), { message: 'A report is not a correction.' })
+  .refine(v => v.reason !== 'other' || v.body.length > 0, { path: ['body'] });
+
+export type FeedbackKind = 'comment' | 'correction' | 'report';
+/** Which of the three things a visitor sent. Pure, so the routing is testable. */
+export function feedbackKind(input: { reason?: ReportReason; values?: unknown }): FeedbackKind {
+  return input.reason ? 'report' : input.values ? 'correction' : 'comment';
+}
 
 export type CorrectionChanges = Record<string, { from: string; to: string }>;
 export type CorrectionField = { key: string; label: string; value: string; maxLength: number; options?: { value: string; label: string }[] };

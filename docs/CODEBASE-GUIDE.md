@@ -58,7 +58,8 @@ Also: the site is **light only** (no dark mode, anywhere); every user-facing str
 ```
 src/app/                      pages and API routes (App Router)
   page.tsx                    home: hero, counts, "Recently added" (catalogued + published only)
-  portal/page.tsx             public archive: full-word search + advanced filters (all in the URL);
+  portal/page.tsx             public archive: search (every term ANDed; "quoted words" = one phrase;
+                              a quote inside a word, as in ד"ר, is kept) + advanced filters (all in the URL);
                               `?person=` = every published record naming that contributor (`source`)
                               or collector (`collector_name`), whole name, case-insensitive
   portal/[id]/page.tsx        public record: media, fields (linked when shared), credit line (names
@@ -68,13 +69,16 @@ src/app/                      pages and API routes (App Router)
   upload/page.tsx             the contribution flow (component: upload-flow.tsx)
   review/page.tsx             queue: My drafts → ready (oldest first) → reading incomplete;
                               grid/list toggle, multi-select, bulk approve; "published without a category"
+                              search (title, description, notes, names, community) + community/category
+                              filters, derived from the queue, order unchanged (review-filter.ts)
   review/[id]/page.tsx        the workbench (component: review-workbench.tsx)
   review/bulk-upload/         experts' bulk upload (component: bulk-upload-flow.tsx): many items, each with
                               media (allow-listed images, PDFs, videos and/or a YouTube link), notes, required dating or
                               "Date unknown", required copyright yes/no; sent one item per request; the
                               AI reading is queued (0041), never run while the expert waits; linked
                               from /review and from the Archive menu (site-nav.tsx, experts/admins only)
-  review/corrections/         public corrections awaiting a decision (from → to diff)
+  review/corrections/         private problem reports (0042: resolve/dismiss) and public corrections
+                              awaiting a decision (from → to diff); linked from /review and the Archive menu
   manage/                     admin: accounts, bin, families, vocabulary, problems
   login/, login/forgot, login/reset   sign-in, account request, password reset
   receipt/[id]                contributor's private link (edit while pending)
@@ -119,7 +123,7 @@ src/lib/
                               (Apps Script Web App; secret in the JSON body, redacted from every error)
   rate-limit.ts               in-memory limiter (per instance; good enough against casual spam)
 
-supabase/migrations/          0001…0041, applied in order. Never edit an applied migration.
+supabase/migrations/          0001…0042, applied in order. Never edit an applied migration.
 tests/unit/                   Vitest (≈554 tests). tests/e2e/ Playwright (permissions, admin).
 scripts/                      deploy, backup, seed, translate-ui, backfill-checksums, guides/capture
 docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisions), phase reports
@@ -142,6 +146,7 @@ docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisi
 | `review_drafts` | an expert's unsaved review work | own rows only |
 | `record_comments` (+ view `public_record_comments` without email) | public comments | public reads the view; writes only via route |
 | `record_corrections` | proposed corrections, objections | experts only; writes only via route |
+| `record_reports` | private "report a problem" from a record page (reason, details, reporter); open/resolved/dismissed (0042) | experts read and decide; writes only via route; **never** shown publicly, no anon grant |
 | `profiles` | `role` pending/volunteer(=content expert)/admin; notify prefs | — |
 | `problems` | error log with codes (E-XXXXXX) | admins |
 
@@ -163,7 +168,8 @@ Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומח�
 | `POST /api/items/bulk-upload-item` | one item of an expert bulk upload: Zod (`src/lib/items/bulk-upload.ts`, shared with the screen), granted files only, forces `pending`, no category, `uploaded_by` = expert, period/credit from the expert; images and PDFs get a `queued` reading, videos none; 503 `migration_required` until 0041 | expert (`getCurrentVolunteer`) |
 | `GET /api/cron/process-pending-ai` | reads queued analyses at quiet hours (23:30 UTC): skips if ≥ `AI_QUEUE_BUSY_THRESHOLD` live readings in 20 min (`busy`) or if today's Pacific-day usage would eat into `AI_QUEUE_RESERVE` of `AI_DAILY_BUDGET` (`quota_reserve`); ≤ `AI_QUEUE_PER_RUN` per run; sends the expert's notes and an `<attached-media>` note for video/YouTube, never video bytes (`src/lib/items/ai-queue*.ts`) | cron secret + `CRON_HOME=1` |
 | `GET /api/cron/backup` | nightly off-site copy (21:45 UTC): Google Drive via the Apps Script bridge (`src/lib/backup/gdrive-bridge.ts`) when `BACKUP_GDRIVE_*` is set, else S3 (`src/lib/backup/s3.ts`); every table live-counted and read in 1000-row pages; Drive gets a manifest last and keeps 14 runs, then copies media files incrementally to a permanent `files/` folder (`item_files.backed_up_at`, migration 0040; ≤ 20 files and 25 MB each per run; `src/lib/backup/drive-files.ts`) | cron secret + `CRON_HOME=1` |
-| `/api/records/[id]/feedback` | public comment or correction (honeypot, timing, rate limit) | public |
+| `/api/records/[id]/feedback` | public comment, correction, or private problem report (`reason`, 0042; mailed to the approving expert only, never the uploader) (honeypot, timing, rate limit) | public |
+| `/api/reports/[id]/decision` | resolve/dismiss a private report | expert (+ RLS: open rows, decided_by = caller) |
 | `/api/corrections/[id]/decision`, `/objection` | accept/decline; uploader's objection via signed link | expert / signed token |
 | `/api/auth/forgot`, `/api/auth/reset` | password reset by our own email; always a neutral answer | public, rate limited |
 | `GET /api/files/[fileId]` | serves files through short signed URLs; public files inline, no download | visibility checked with service role |
@@ -193,5 +199,5 @@ npm run test:e2e          # Playwright permission suite (needs test accounts)
 - Uncatalogued items (category NULL) are invisible to the public even when `status = accepted`; they wait on `/review` under "Published without a category".
 - The review queue is oldest-first, with items whose AI reading failed or is still running placed after the readable ones.
 - A comment appears immediately; a correction never changes the live record until an expert accepts it.
-- Screenshots cannot be blocked on the web. Public media only blocks right-click, drag and the players' download buttons.
+- Screenshots cannot be blocked on the web. Public media (`/`, `/portal`, `/portal/*`) only blocks right-click, drag, selection and the players' download buttons.
 - Rate limits are per server instance (in memory); good against casual abuse, not against a determined attacker.

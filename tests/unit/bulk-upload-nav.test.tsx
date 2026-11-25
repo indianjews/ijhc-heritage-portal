@@ -63,10 +63,13 @@ describe('active state', () => {
   });
 
   it('on the queue and on a record in review, Review stays current', () => {
-    for (const path of ['/review', '/review/0b8e6a9c-0000-4000-8000-000000000000', '/review/corrections']) {
+    for (const path of ['/review', '/review/0b8e6a9c-0000-4000-8000-000000000000']) {
       expect(archiveLinkCurrent('/review', path)).toBe(true);
       expect(archiveLinkCurrent('/review/bulk-upload', path)).toBe(false);
     }
+    // Since "Corrections & reports" has its own link, it alone is lit there.
+    expect(archiveLinkCurrent('/review', '/review/corrections')).toBe(false);
+    expect(archiveLinkCurrent('/review/corrections', '/review/corrections')).toBe(true);
     expect(archiveLinkCurrent('/review', '/reviewer')).toBe(false);
     expect(archiveLinkCurrent('/manage/vocabulary', '/manage/vocabulary')).toBe(true);
   });
