@@ -6,7 +6,7 @@ import { ok, fail, readJson } from '@/lib/api';
 import { getPublishedItem } from '@/lib/items/queries';
 import { createPublicFeedback } from '@/lib/items/mutations';
 import { correctionFields } from '@/lib/items/correction-fields';
-import { PublicInput, correctionChanges, hasTooManyLinks } from '@/lib/items/public-input';
+import { PublicInput, correctionChanges, feedbackKind, hasTooManyLinks } from '@/lib/items/public-input';
 import { publicToken, verifyPublicToken } from '@/lib/items/public-tokens';
 import { clientKey, rateLimit } from '@/lib/rate-limit';
 import { notifyRecordFeedback } from '@/lib/mail/record-feedback';
@@ -20,8 +20,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!input.success || input.data.website || !verifyPublicToken('form', id, input.data.token))
       return fail(400, 'invalid_request', t('public.invalid'));
     const body = input.data;
-    const kind = body.values ? 'correction' : 'comment';
-    if ((!body.values && !body.body) || hasTooManyLinks([body.body, ...Object.values(body.values ?? {})].join(' ')))
+    const kind = feedbackKind(body);
+    // A report needs only its reason; a comment needs words; a correction needs changes.
+    if ((kind === 'comment' && !body.body) || hasTooManyLinks([body.body, ...Object.values(body.values ?? {})].join(' ')))
       return fail(400, 'invalid_request', t('public.invalid'));
     const ip = rateLimit(`feedback:ip:${clientKey(request)}`, { limit: 6, windowMs: 600_000 });
     const itemLimit = rateLimit(`feedback:item:${id}`, { limit: 30, windowMs: 600_000 });
@@ -36,12 +37,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     catch { return fail(400, 'invalid_request', t('public.invalid')); }
     const feedbackId = randomUUID();
     const objectionToken = kind === 'correction' ? publicToken('objection', feedbackId) : undefined;
+    // A private report is stored apart from comments and never read by the record page.
     const saved = await createPublicFeedback({
       id: feedbackId, itemId: id, kind, ...body, changes, objectionToken,
     });
     if (!saved) return fail(404, 'not_found', t('record.notFound'));
     after(async () => {
-      try { await notifyRecordFeedback(item, kind, body.body, changes, feedbackId, objectionToken); }
+      try { await notifyRecordFeedback(item, kind, body.body, changes, feedbackId, objectionToken, body.reason); }
       catch { console.error('[mail] record feedback notice failed', feedbackId); }
     });
     return ok({ saved: true }, { status: 201 });

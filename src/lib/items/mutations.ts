@@ -1,6 +1,6 @@
 import 'server-only';
 import { getCurrentVolunteer } from '@/lib/supabase/server';
-import { CollectorInput, type CorrectionChanges } from './public-input';
+import { CollectorInput, type CorrectionChanges, type FeedbackKind, type ReportReason } from './public-input';
 import { tokenHash, verifyPublicToken } from './public-tokens';
 import { storedChecksum } from '@/lib/files/server-hash';
 import { retryOneReading } from './retry-reading';
@@ -31,8 +31,8 @@ export async function saveCollector(itemId: string, input: unknown): Promise<boo
   return Boolean(data);
 }
 export async function createPublicFeedback(input: {
-  id: string; itemId: string; kind: 'comment' | 'correction'; anonymous: boolean;
-  name: string; email: string; body: string; changes?: CorrectionChanges; objectionToken?: string;
+  id: string; itemId: string; kind: FeedbackKind; anonymous: boolean;
+  name: string; email: string; body: string; changes?: CorrectionChanges; objectionToken?: string; reason?: ReportReason;
 }) {
   const admin = createAdminSupabase();
   const { data: visible, error: readError } = await admin.from('items').select('id')
@@ -40,6 +40,14 @@ export async function createPublicFeedback(input: {
   if (readError) throw readError;
   if (!visible) return false;
   const identity = { anonymous: input.anonymous };
+  if (input.kind === 'report') {
+    // Private (0042): experts only, never on the record page.
+    const { error } = await admin.from('record_reports').insert({ ...identity, id: input.id, item_id: input.itemId,
+      reason: input.reason, body: input.body || null,
+      reporter_name: input.anonymous ? null : input.name, reporter_email: input.anonymous ? null : input.email });
+    if (error) throw error;
+    return true;
+  }
   const { error } = input.kind === 'comment'
     ? await admin.from('record_comments').insert({ ...identity, id: input.id, item_id: input.itemId,
       author_name: input.anonymous ? null : input.name, author_email: input.anonymous ? null : input.email, body: input.body })
@@ -55,6 +63,16 @@ export async function moderateRecordComment(itemId: string, id: string, hidden: 
   const { data, error } = await (await createServerSupabase()).from('record_comments')
     .update({ hidden_at: hidden ? new Date().toISOString() : null, hidden_by: hidden ? actor.id : null })
     .eq('id', id).eq('item_id', itemId).select('id').maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+/** An expert closes a private report. RLS (0042) requires it open and stamps the decider. */
+export async function decideRecordReport(id: string, status: 'resolved' | 'dismissed') {
+  const actor = await getCurrentVolunteer();
+  if (!actor) return false;
+  const { data, error } = await (await createServerSupabase()).from('record_reports')
+    .update({ status, decided_at: new Date().toISOString(), decided_by: actor.id })
+    .eq('id', id).eq('status', 'open').select('id').maybeSingle();
   if (error) throw error;
   return Boolean(data);
 }
