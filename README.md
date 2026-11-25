@@ -16,7 +16,7 @@ The complete lifecycle the product outline calls for — **contribute → analys
 | `/review` — the queue | Volunteers only |
 | `/review/[id]` — verification workbench | Volunteers only |
 
-Stage 2 adds contributor accounts and dashboards, category-specific forms, structured provenance, the Archivist/Expert split, the clarification loop, collections, access levels, and natural-language search. See `../PILOT WITH EREZ/06 — Roadmap.md`.
+Stage 2 adds contributor accounts and dashboards, category-specific forms, structured provenance, the Archivist/Expert split, the clarification loop, collections, access levels, and natural-language search. The stage roadmap is kept outside this repository; ask the Center for the current copy.
 
 ## Setup
 

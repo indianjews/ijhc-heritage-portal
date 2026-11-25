@@ -39,8 +39,8 @@ never edit it, never deploy it, never share its database.
    render. Adding a screen means updating all three.
 
 5. **Ask before changing who can do what.** The permission model is decided per
-   stage, not inherited. It is written down in
-   `../PILOT WITH EREZ/04 — Permissions and Security.md`.
+   stage, not inherited. The current roles and rules are summarised in
+   `docs/CODEBASE-GUIDE.md` (§2 and §4); record any new decision in `docs/`.
 
 6. **`SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` are server-only.** Never
    prefix either with `NEXT_PUBLIC_`.
@@ -51,18 +51,9 @@ never edit it, never deploy it, never share its database.
 npm run verify
 ```
 
-Then update `../PILOT WITH EREZ/PROGRESS.md` and the relevant section of
-`../PILOT WITH EREZ/01 — System Specification.md`. A feature is not finished
-until those reflect it. Then push the docs to the Obsidian vault:
-
-```bash
-npm run sync:vault
-```
-
-`../PILOT WITH EREZ/` is the source of truth. The copies under
-`Freelance/IJHC/notes/` in the vault are **generated** — never hand-edit one, the
-next sync overwrites it. Anything the vault needs and the repo does not goes in
-`VAULT_ADDENDUM` inside `scripts/sync-vault.mjs`.
+It must pass. Then update the documentation in `docs/` that the change affects
+(at least `docs/CODEBASE-GUIDE.md` when the map, data model, request paths or
+permissions change, and `docs/RUNBOOK.md` for any migration and how to undo it).
 
 ## Next 16 notes
 
