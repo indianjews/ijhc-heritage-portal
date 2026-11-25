@@ -4,7 +4,8 @@ export type ItemCategory = 'material_culture' | 'documents' | 'oral_histories' |
 export type Community = 'bene_israel' | 'cochin' | 'baghdadi' | 'bnei_menashe' | 'general_india';
 export type AccessLevel = 'public' | 'restricted' | 'research' | 'administrative';
 /** `pending`: the item was sent on while its reading was still running (0032). */
-export type AnalysisStatus = 'succeeded' | 'failed' | 'pending';
+/** `queued`: asked for, read later at quiet hours (0041). `pending`: being read now. */
+export type AnalysisStatus = 'succeeded' | 'failed' | 'pending' | 'queued';
 
 export interface Profile {
   id: string;

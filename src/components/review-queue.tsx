@@ -5,7 +5,7 @@ import { FilePreview } from './file-preview';
 import { ReviewBulkTable } from './review-bulk-table';
 import { useMessages } from '@/lib/i18n/provider';
 import { categoryKey, communityKey } from '@/lib/i18n/labels';
-import { readingState, waitingDays } from '@/lib/items/review-order';
+import { readingLabelKey, readingState, waitingDays } from '@/lib/items/review-order';
 import type { AiAnalysis, Item, ItemFile } from '@/lib/types';
 
 type QueueItem = Item & { file: ItemFile | null; analysis: AiAnalysis | null };
@@ -42,7 +42,7 @@ export function ReviewQueue({ items }: { items: QueueItem[] }) {
       <div className={view === 'grid' ? 'space-y-2 p-4' : 'min-w-0 space-y-2'}>
         <Link href={`/review/${item.id}`} className="inline-flex min-h-11 items-center break-words font-display text-xl underline-offset-4 hover:underline focus-visible:outline-2">{item.title}</Link>
         <p className="text-sm text-muted">{item.community ? t(communityKey(item.community)) : t('review3.unassigned')} · {t(categoryKey(item.category))}</p>
-        <p className="text-sm">{t(readingState(item) === 'ready' ? 'queue.ready' : readingState(item) === 'failed' ? 'queue.failed' : readingState(item) === 'pending' ? 'queue.pending' : 'queue.missing')} · {t('queue.waitingDays', { count: waitingDays(item.created_at) })}</p>
+        <p className="text-sm">{t(readingLabelKey(readingState(item)))} · {t('queue.waitingDays', { count: waitingDays(item.created_at) })}</p>
         <p className="break-words text-sm text-muted" dir="auto">{[...new Set([...item.contributor_keywords, ...(item.analysis?.keywords ?? [])])].join(', ')}</p>
       </div>
       <label className={`flex min-h-11 cursor-pointer items-center gap-3 ${view === 'grid' ? 'px-4 pb-4' : 'self-start'}`}><input type="checkbox" className="h-5 w-5 accent-[var(--color-accent-strong)]" checked={selected.includes(item.id)} disabled={Boolean(batch) || (!selected.includes(item.id) && selected.length >= 50)} onChange={e => setSelected(previous => e.target.checked ? [...previous, item.id] : previous.filter(id => id !== item.id))} />{t('review3.select')}</label>

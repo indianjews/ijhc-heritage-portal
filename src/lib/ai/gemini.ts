@@ -10,7 +10,7 @@ import {
   type FieldSuggestion,
 } from '@/lib/fields/suggestions';
 import { CATEGORIES, type ItemCategory } from '@/lib/types';
-import { buildContributorNote, buildInstructions } from './prompt';
+import { buildAttachedMediaNote, buildContributorNote, buildInstructions } from './prompt';
 import type { AIProvider, AnalysisInput, AnalysisResult } from './types';
 
 /**
@@ -515,6 +515,8 @@ export function createGeminiProvider(): AIProvider {
               // Contributor text only. The rules live in systemInstruction, in
               // a turn nobody outside this codebase can write into.
               { text: buildContributorNote(input.title, input.fileName, input.known, input.communityHint) },
+              // Archive-written facts about the record, never contributor text.
+              ...(buildAttachedMediaNote(input.attachedMedia) ? [{ text: buildAttachedMediaNote(input.attachedMedia) }] : []),
             ],
           },
         ],

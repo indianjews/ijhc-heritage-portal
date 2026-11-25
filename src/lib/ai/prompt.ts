@@ -69,6 +69,8 @@ export function buildInstructions(
     '',
     'Use the note only as a hint about what to look for. A title claiming the item is a Cochin ketubah is a reason to look for evidence of one, never a reason to report having found it.',
     '',
+    'The user turn may also carry an <attached-media> block, written by the archive rather than the contributor. It lists recordings that belong to the same record but were not sent to you: a video file, or a YouTube video. You have not seen or heard them. Say in the summary that the record includes the recording, never describe or transcribe its content, leave the transcript empty for it, and base every field on the file you were given and the contributor note — an invitation or flyer for a lecture can tell you its title, speaker, date and place.',
+    '',
     'Write two sentences describing what the item contains, transcribe any text or speech it carries, and then fill in whichever of the catalogue fields below the material actually supports.',
     '',
     'Say separately whether this is plausibly material of Indian Jewish heritage at all. Most of what arrives is; some is a holiday photograph, a screenshot, or a document from somewhere else entirely, and saying so early saves a volunteer the reading. Answer false only when you are confident — a faded, cropped, or puzzling item that could be Indian is not grounds for it, and when in doubt answer true. If you answer false, name in one clause what places it elsewhere.',
@@ -196,6 +198,37 @@ function vocabularySection(branches: VocabularyBranch[]): string[] {
  * stranger starts. Angle brackets are stripped from the input so the block
  * cannot be closed early and escaped.
  */
+/** Recordings on the same record that the model is not sent. */
+export interface AttachedMedia {
+  /** File names of video files on the record. */
+  videos: string[];
+  /** The record's YouTube address, if it has one. */
+  youtubeUrl: string | null;
+}
+
+/**
+ * The <attached-media> block: what else is on the record, stated by the
+ * archive. Empty when there is nothing to state.
+ *
+ * Facts only. How to treat them is a rule, and lives in `buildInstructions`
+ * for the same reason the contributor note carries no rules (see below).
+ * The values are fenced like the contributor's: a file name is typed by a
+ * person, and a URL could be anything that passed validation.
+ */
+export function buildAttachedMediaNote(media: AttachedMedia | undefined): string {
+  if (!media || (!media.videos.length && !media.youtubeUrl)) return '';
+  const fence = (value: string) => value.replace(/[<>]/g, ' ').trim();
+  return [
+    '<attached-media>',
+    'Also on this record, and not sent to you:',
+    ...media.videos.map((name) => `- a video file: ${fence(name)}`),
+    media.youtubeUrl ? `- a YouTube video: ${fence(media.youtubeUrl)}` : '',
+    '</attached-media>',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 export function buildContributorNote(title: string, fileName: string, known?: string, communityHint?: string): string {
   const fence = (value: string) => value.replace(/[<>]/g, ' ').trim();
 

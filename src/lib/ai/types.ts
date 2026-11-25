@@ -16,6 +16,12 @@ export interface AnalysisInput {
   /** The contributor's own account of the object. Treated as verified fact. */
   known?: string;
   communityHint?: string;
+  /**
+   * Recordings on the same record that are deliberately not sent: video files
+   * and YouTube links (bulk upload, 0041). Stated to the model so it records
+   * that they exist and reads only the file and the note it was given.
+   */
+  attachedMedia?: import('./prompt').AttachedMedia;
   /** The language the reading should come back in. */
   language?: string;
   /**
