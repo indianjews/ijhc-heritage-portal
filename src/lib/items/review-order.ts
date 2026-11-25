@@ -8,16 +8,21 @@ type Waiting = {
   otherReadings?: (AiAnalysis['status'] | null)[];
 };
 
-type ReadingState = 'ready' | 'failed' | 'pending' | 'missing';
+type ReadingState = 'ready' | 'failed' | 'pending' | 'queued' | 'missing';
 
 function stateOf(status: AiAnalysis['status'] | null | undefined): ReadingState {
-  return status === 'succeeded' ? 'ready' : status === 'failed' ? 'failed' : status === 'pending' ? 'pending' : 'missing';
+  return status === 'succeeded' ? 'ready' : status === 'failed' ? 'failed' : status === 'pending' ? 'pending' : status === 'queued' ? 'queued' : 'missing';
+}
+
+/** The catalogue key that names a reading state in the queue. */
+export function readingLabelKey(state: ReadingState): 'queue.ready' | 'queue.failed' | 'queue.pending' | 'queue.queued' | 'queue.missing' {
+  return `queue.${state}` as const;
 }
 
 /** The worst reading among the item's files: failed, then still reading, then none, then ready. */
 export function readingState(item: Pick<Waiting, 'analysis' | 'otherReadings'>): ReadingState {
   const states = [stateOf(item.analysis?.status), ...(item.otherReadings ?? []).map(stateOf)];
-  for (const worst of ['failed', 'pending', 'missing'] as const) if (states.includes(worst)) return worst;
+  for (const worst of ['failed', 'pending', 'queued', 'missing'] as const) if (states.includes(worst)) return worst;
   return 'ready';
 }
 

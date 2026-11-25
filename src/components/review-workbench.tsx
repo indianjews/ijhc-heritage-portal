@@ -430,6 +430,11 @@ export function ReviewWorkbench({
         )}
 
         {simulated && <SimulatedNotice label={t('common.simulated')} className="mb-5" />}
+        {analysis?.status === 'queued' && (
+          <p role="status" className="mb-5 rounded-lg border-s-[3px] border-rule-strong bg-paper-2 px-3 py-2 text-xs text-muted">
+            {t('wb.readingQueued')}
+          </p>
+        )}
         {analysis?.status === 'pending' && (
           <p role="status" className="mb-5 rounded-lg border-s-[3px] border-rule-strong bg-paper-2 px-3 py-2 text-xs text-muted">
             {t('wb.readingPending')}

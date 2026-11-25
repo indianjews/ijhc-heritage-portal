@@ -1,0 +1,33 @@
+-- A reading that has been asked for but not started: `queued`.
+--
+-- Bulk uploads by content experts do not call the model while the expert
+-- waits. Each readable file gets an ai_analyses row with status `queued`, and
+-- /api/cron/process-pending-ai reads a few of them at quiet hours, when the
+-- daily allowance has room to spare for live contributors.
+--
+-- Why a new value and not `pending`: claim_reading_retry (0035) treats any
+-- `pending` row older than two hours as an abandoned reading and retries it,
+-- spending one of its three tries, without the expert's notes and outside the
+-- quiet-hours guard. `queued` is invisible to that function by construction,
+-- because it selects only `failed` and stale `pending` rows. Once the queue
+-- claims a row it becomes `pending` (with last_retry_at as the lease), so a run
+-- that dies mid-read degrades into exactly the stale-pending case the nightly
+-- retry already handles.
+--
+-- Not applied automatically. Apply in the Supabase SQL editor BEFORE pushing
+-- the code: until it exists, /api/items/bulk-upload-item answers 503
+-- `migration_required` and saves nothing.
+--
+-- ALTER TYPE ... ADD VALUE cannot run inside a transaction block that later
+-- uses the value, so this file is deliberately not wrapped in begin/commit
+-- (same as 0032 and 0039). It is a single idempotent statement.
+--
+-- No RLS, grant or policy changes.
+--
+-- Undo: an enum value cannot be dropped in Postgres. To retire it, first
+-- return every queued row to a state the rest of the system knows:
+--   update public.ai_analyses set status = 'failed',
+--     error = 'Queued reading cancelled.' where status = 'queued';
+-- after which the value is unused and harmless.
+
+alter type analysis_status add value if not exists 'queued';

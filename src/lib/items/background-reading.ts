@@ -43,6 +43,8 @@ export interface PendingReading {
   known?: string;
   communityHint?: string;
   language?: string;
+  /** Recordings on the record that the model is not sent (bulk upload queue). */
+  attachedMedia?: import('@/lib/ai/prompt').AttachedMedia;
   files: PendingFile[];
 }
 
@@ -91,6 +93,7 @@ export async function readInBackground(job: PendingReading, startedAt = Date.now
         known: job.known,
         communityHint: job.communityHint,
         language: job.language,
+        attachedMedia: job.attachedMedia,
         vocabulary,
         deadline,
       });

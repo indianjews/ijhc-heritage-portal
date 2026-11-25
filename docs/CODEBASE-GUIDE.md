@@ -65,6 +65,10 @@ src/app/                      pages and API routes (App Router)
   review/page.tsx             queue: My drafts → ready (oldest first) → reading incomplete;
                               grid/list toggle, multi-select, bulk approve; "published without a category"
   review/[id]/page.tsx        the workbench (component: review-workbench.tsx)
+  review/bulk-upload/         experts' bulk upload (component: bulk-upload-flow.tsx): many items, each with
+                              media (allow-listed images, PDFs, videos and/or a YouTube link), notes, required dating or
+                              "Date unknown", required copyright yes/no; sent one item per request; the
+                              AI reading is queued (0041), never run while the expert waits
   review/corrections/         public corrections awaiting a decision (from → to diff)
   manage/                     admin: accounts, bin, families, vocabulary, problems
   login/, login/forgot, login/reset   sign-in, account request, password reset
@@ -110,7 +114,7 @@ src/lib/
                               (Apps Script Web App; secret in the JSON body, redacted from every error)
   rate-limit.ts               in-memory limiter (per instance; good enough against casual spam)
 
-supabase/migrations/          0001…0040, applied in order. Never edit an applied migration.
+supabase/migrations/          0001…0041, applied in order. Never edit an applied migration.
 tests/unit/                   Vitest (≈554 tests). tests/e2e/ Playwright (permissions, admin).
 scripts/                      deploy, backup, seed, translate-ui, backfill-checksums, guides/capture
 docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisions), phase reports
@@ -124,7 +128,7 @@ docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisi
 |---|---|---|
 | `items` | the record. `status` pending/accepted/rejected/shadow_gallery; `category` (NULL = not catalogued → never public); `deleted_at` = in the bin; `reviewed_by`, `uploaded_by`; `collector_name`, `collector_credit_required` | public reads accepted+public+not binned+catalogued; experts write via policies (0036 rule for accepted rows) |
 | `item_files` | files of an item; `checksum` = SHA-256; `backed_up_at` = when the Drive backup copied the bytes (NULL = not yet; 0040) | via items |
-| `ai_analyses` | the machine reading per file; `status` succeeded/failed/pending; `retry_count`, `last_retry_at` | experts only |
+| `ai_analyses` | the machine reading per file; `status` succeeded/failed/pending/queued (`queued` = bulk upload, read at quiet hours; 0041); `retry_count`, `last_retry_at` (also the queue's claim lease) | experts only |
 | `item_fields` | catalogue values, `source` contributor/ai/expert | experts write (0036) |
 | `keywords`, `keyword_translations`, `keyword_candidates` (`source` ai/contributor, `item_id`) | vocabulary | public reads keywords; experts judge candidates |
 | `families`, `item_families`, `contributors`, `item_contributors` | people | contributors are experts-only |
@@ -151,6 +155,8 @@ Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומח�
 | `PUT/DELETE /api/items/[id]/draft` | review drafts | expert, own |
 | `/api/items/[id]/duplicates` | not-a-duplicate / merge into older | expert (+0036 rule for published) |
 | `/api/items/[id]/reread`, `/api/cron/reread` | retry a failed reading (cron daily 01:15 UTC, ≤ `AI_RETRY_DAILY`, 3 tries max) | expert / cron secret |
+| `POST /api/items/bulk-upload-item` | one item of an expert bulk upload: Zod (`src/lib/items/bulk-upload.ts`, shared with the screen), granted files only, forces `pending`, no category, `uploaded_by` = expert, period/credit from the expert; images and PDFs get a `queued` reading, videos none; 503 `migration_required` until 0041 | expert (`getCurrentVolunteer`) |
+| `GET /api/cron/process-pending-ai` | reads queued analyses at quiet hours (23:30 UTC): skips if ≥ `AI_QUEUE_BUSY_THRESHOLD` live readings in 20 min (`busy`) or if today's Pacific-day usage would eat into `AI_QUEUE_RESERVE` of `AI_DAILY_BUDGET` (`quota_reserve`); ≤ `AI_QUEUE_PER_RUN` per run; sends the expert's notes and an `<attached-media>` note for video/YouTube, never video bytes (`src/lib/items/ai-queue*.ts`) | cron secret + `CRON_HOME=1` |
 | `GET /api/cron/backup` | nightly off-site copy (21:45 UTC): Google Drive via the Apps Script bridge (`src/lib/backup/gdrive-bridge.ts`) when `BACKUP_GDRIVE_*` is set, else S3 (`src/lib/backup/s3.ts`); every table live-counted and read in 1000-row pages; Drive gets a manifest last and keeps 14 runs, then copies media files incrementally to a permanent `files/` folder (`item_files.backed_up_at`, migration 0040; ≤ 20 files and 25 MB each per run; `src/lib/backup/drive-files.ts`) | cron secret + `CRON_HOME=1` |
 | `/api/records/[id]/feedback` | public comment or correction (honeypot, timing, rate limit) | public |
 | `/api/corrections/[id]/decision`, `/objection` | accept/decline; uploader's objection via signed link | expert / signed token |

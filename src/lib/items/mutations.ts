@@ -132,6 +132,13 @@ export interface CreateFileInput {
    * `pending` and finished in the background — see background-reading.ts.
    */
   analysisPending?: boolean;
+  /**
+   * Queued for the quiet-hours reading (0041): saved as `queued`, read later by
+   * /api/cron/process-pending-ai. Used by the content experts' bulk upload.
+   */
+  analysisQueued?: boolean;
+  /** No analysis row at all: a video in a bulk upload, which the model is never sent. */
+  noAnalysis?: boolean;
 }
 
 export interface CreateItemInput {
@@ -170,8 +177,13 @@ export interface CreateItemInput {
    * not the same as an empty list — an empty list means they cleared every one.
    */
   contributorFields: { key: string; value: string; source?: 'contributor'; note?: string | null }[] | null;
-  /** At least one. The first is the primary — the cover of the record. */
+  /**
+   * The first is the primary — the cover of the record. At least one, unless
+   * `sourceUrl` is set (a YouTube-only item from the bulk upload).
+   */
   files: CreateFileInput[];
+  /** A dating the uploader entered (bulk upload by a content expert). Never the model's. */
+  period?: string | null;
 }
 
 /**
@@ -189,7 +201,7 @@ export interface CreateItemInput {
 export async function createItem(input: CreateItemInput): Promise<Item> {
   const admin = createAdminSupabase();
 
-  if (!input.files.length) throw new Error('A submission needs at least one file.');
+  if (!input.files.length && !input.sourceUrl) throw new Error('A submission needs at least one file.');
   // Sequential downloads keep the memory ceiling at one 50 MB original.
   // Fail before creating the item if storage cannot supply authoritative bytes.
   const checksums: string[] = [];
@@ -225,6 +237,7 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
       consent_at: new Date().toISOString(),
       contributor_description: input.contributorDescription,
       contributor_keywords: input.contributorKeywords,
+      ...(input.period !== undefined ? { period: input.period } : {}),
       status: 'pending',
       access: 'public',
     })
@@ -233,7 +246,7 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
 
   if (itemError) throw itemError;
 
-  const { data: files, error: fileError } = await admin
+  const { data: files, error: fileError } = !input.files.length ? { data: [], error: null } : await admin
     .from('item_files')
     .insert(
       input.files.map((file, index) => ({
@@ -263,15 +276,15 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
   // belongs to page four.
   const byPath = new Map((files ?? []).map((f) => [(f as { storage_path: string }).storage_path, f]));
 
-  const analyses = input.files.map((file) => {
+  const analyses = input.files.filter((file) => !file.noAnalysis).map((file) => {
     const row = byPath.get(file.storagePath) as { id: string } | undefined;
     return {
       item_id: item.id,
       file_id: row?.id ?? null,
       provider: file.analysis?.provider ?? 'none',
       model: file.analysis?.model ?? 'none',
-      status: file.analysis ? 'succeeded' : file.analysisPending ? 'pending' : 'failed',
-      error: file.analysisPending ? null : file.analysisError,
+      status: file.analysis ? 'succeeded' : file.analysisQueued ? 'queued' : file.analysisPending ? 'pending' : 'failed',
+      error: file.analysisPending || file.analysisQueued ? null : file.analysisError,
       summary: file.analysis?.summary ?? null,
       keywords: file.analysis?.keywords ?? [],
       language: file.analysis?.language ?? null,
@@ -298,8 +311,17 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
     };
   });
 
-  const { error: analysisError } = await admin.from('ai_analyses').insert(analyses);
+  const { error: analysisError } = analyses.length
+    ? await admin.from('ai_analyses').insert(analyses)
+    : { error: null };
 
+  if (analysisError && analyses.some((a) => a.status === 'queued')) {
+    // A queued reading that was not saved is a record nobody will ever read.
+    // Unlike a contributor's submission, the expert is still on the screen and
+    // can retry, so nothing half-made is kept. Cascades to item_files.
+    await admin.from('items').delete().eq('id', item.id);
+    throw analysisError;
+  }
   // A failed analysis row is not worth losing the submission over.
   if (analysisError) console.error('[items] analysis insert failed', analysisError);
 

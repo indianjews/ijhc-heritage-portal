@@ -4,10 +4,10 @@ import { listReviewDrafts } from '@/lib/items/queries';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { FilePreview } from '@/components/file-preview';
-import { EmptyState, StatusPill } from '@/components/primitives';
+import { EmptyState, StatusPill, buttonClass } from '@/components/primitives';
 import { Reveal } from '@/components/reveal';
 import { AwaitingApproval } from '@/components/awaiting-approval';
-import { readingState, waitingDays } from '@/lib/items/review-order';
+import { readingLabelKey, readingState, waitingDays } from '@/lib/items/review-order';
 import { listReviewQueue, listUncataloguedPublished } from '@/lib/items/queries';
 import { getCurrentProfile, getCurrentVolunteer } from '@/lib/supabase/server';
 import { type AiAnalysis, type Item, type ItemFile } from '@/lib/types';
@@ -54,6 +54,11 @@ export default async function ReviewPage() {
         >
           {t('queue.intro')}
         </p>
+        {volunteer && (
+          <Link href="/review/bulk-upload" className={buttonClass('primary', 'mt-6')}>
+            {t('bulk.openFromQueue')}
+          </Link>
+        )}
       </header>
 
       <section className="mb-8 rounded-2xl border border-rule bg-paper-2 p-5">
@@ -95,7 +100,7 @@ async function QueueGrid({ items }: { items: QueueItem[] }) {
                 {item.title}
               </h2>
               {readingState(item) !== 'ready' && <p className="text-caution">
-                {t(readingState(item) === 'failed' ? 'queue.failed' : readingState(item) === 'pending' ? 'queue.pending' : 'queue.missing')}
+                {t(readingLabelKey(readingState(item)))}
               </p>}
               {item.analysis?.summary && (
                 <p className="machine line-clamp-2 text-muted">{item.analysis.summary}</p>
