@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { fakeState } from './helpers/fake-admin';
 
 /**
  * The nightly backup's choice of destination, and the Drive run end to end
@@ -8,31 +9,14 @@ import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({
   problem: vi.fn<(row: { message: string }) => Promise<void>>(async () => {}),
-  rows: {} as Record<string, unknown[]>,
-  short: new Set<string>(),
-  ranges: [] as [string, number, number][],
+  state: null as unknown as import('./helpers/fake-admin').FakeAdminState,
 }));
 
 vi.mock('@/lib/problems/record', () => ({ recordProblem: mocks.problem }));
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminSupabase: () => ({
-    from: (table: string) => ({
-      select: (_columns: string, options?: { count?: string; head?: boolean }) => {
-        const all = mocks.rows[table] ?? [];
-        if (options?.head) return Promise.resolve({ count: all.length + (mocks.short.has(table) ? 1 : 0), error: null });
-        const query = {
-          order: () => query,
-          range: async (from: number, to: number) => {
-            mocks.ranges.push([table, from, to]);
-            return { data: all.slice(from, to + 1), error: null };
-          },
-        };
-        return query;
-      },
-    }),
-    storage: { from: () => ({ download: async () => ({ data: null, error: new Error('no storage in tests') }) }) },
-  }),
-}));
+vi.mock('@/lib/supabase/admin', async () => {
+  const { fakeAdmin } = await import('./helpers/fake-admin');
+  return { createAdminSupabase: () => fakeAdmin(mocks.state) };
+});
 
 const { GET } = await import('@/app/api/cron/backup/route');
 
@@ -59,9 +43,8 @@ beforeEach(() => {
   for (const k of ENV_KEYS) delete process.env[k];
   process.env.CRON_SECRET = 'cron-secret';
   process.env.CRON_HOME = '1';
-  mocks.rows = { items: Array.from({ length: 2500 }, (_, i) => ({ id: i })), profiles: [{ id: 'p' }] };
-  mocks.short.clear();
-  mocks.ranges = [];
+  mocks.state = fakeState();
+  mocks.state.rows = { items: Array.from({ length: 2500 }, (_, i) => ({ id: i })), profiles: [{ id: 'p' }] };
   mocks.problem.mockClear();
   sent = [];
 });
@@ -130,7 +113,7 @@ describe('/api/cron/backup destination', () => {
     expect(sent.every((b) => b.secret === SECRET)).toBe(true);
 
     // 2500 rows were read in 1000-row pages, not one capped select.
-    expect(mocks.ranges.filter(([t]) => t === 'items')).toEqual([['items', 0, 999], ['items', 1000, 1999], ['items', 2000, 2999]]);
+    expect(mocks.state.ranges.filter(([t]) => t === 'items')).toEqual([['items', 0, 999], ['items', 1000, 1999], ['items', 2000, 2999]]);
   });
 
   it('prefers Drive over S3 when both are configured', async () => {
@@ -164,7 +147,7 @@ describe('/api/cron/backup destination', () => {
   it('withholds the manifest when a table read short of its live count', async () => {
     process.env.BACKUP_GDRIVE_WEBHOOK_URL = WEBHOOK;
     process.env.BACKUP_GDRIVE_SECRET = SECRET;
-    mocks.short.add('profiles');
+    mocks.state.short.add('profiles');
     stubBridge();
     const body = await data(await GET(request()));
     expect(body.database.short).toEqual(['profiles']);
@@ -172,3 +155,61 @@ describe('/api/cron/backup destination', () => {
     expect(mocks.problem).toHaveBeenCalled();
   });
 });
+
+describe('/api/cron/backup incremental files (Drive)', () => {
+  const MB = 1024 * 1024;
+  const file = (id: string, path: string, created: string, bytes = 3) =>
+    ({ id, storage_path: path, mime_type: 'image/jpeg', byte_size: bytes, created_at: created, backed_up_at: null });
+
+  beforeEach(() => {
+    process.env.BACKUP_GDRIVE_WEBHOOK_URL = WEBHOOK;
+    process.env.BACKUP_GDRIVE_SECRET = SECRET;
+  });
+
+  it('copies files under files/, marks only successes, and reports the counts', async () => {
+    mocks.state.rows.item_files = [
+      file('b', 'uploads/2026/08/b-second.jpg', '2026-08-02'),
+      file('a', 'uploads/2026/08/a-first.jpg', '2026-08-01'),
+      file('big', 'uploads/2026/08/big.tif', '2026-08-03', 30 * MB),
+    ];
+    mocks.state.storage = {
+      'uploads/2026/08/a-first.jpg': new Uint8Array([1, 2, 3]),
+      'uploads/2026/08/b-second.jpg': new Uint8Array([4, 5, 6]),
+    };
+    stubBridge((body) => body.fileName === 'b-second.jpg'
+      ? { ok: false, error: `drive full ${SECRET}` }
+      : body.action === 'list_folders' ? { ok: true, folders: [{ id: 'f', name: 'files' }] }
+      : { ok: true, id: 'x', name: String(body.fileName) });
+
+    const body = await data(await GET(request()));
+
+    const fileUploads = sent.filter((b) => b.action === 'upload' && b.encoding === 'base64');
+    expect(fileUploads.map((b) => [b.dir, b.fileName])).toEqual([
+      ['files/uploads/2026/08', 'a-first.jpg'],
+      ['files/uploads/2026/08', 'b-second.jpg'],
+    ]);
+    expect(fileUploads[0].content).toBe(Buffer.from([1, 2, 3]).toString('base64'));
+    expect(fileUploads.every((b) => !/^\d{4}-\d{2}-\d{2}/.test(String(b.dir)))).toBe(true);
+
+    expect(mocks.state.updates.map((u) => u.id)).toEqual(['a']);
+    expect(body).toMatchObject({ filePhase: 'done', filesBackedUp: 1, filesRemaining: 2 });
+    expect(body.filesFailed).toHaveLength(1);
+    expect(body.filesSkippedOversize).toEqual([{ path: 'uploads/2026/08/big.tif', bytes: 30 * MB }]);
+    expect(JSON.stringify(body)).not.toContain(SECRET);
+    // The permanent files/ folder is never offered for trashing.
+    expect(sent.some((b) => b.action === 'trash_folder')).toBe(false);
+    // Tables still backed up and the manifest still written.
+    expect(body.manifest).toBe(true);
+  });
+
+  it('keeps the table backup when migration 0040 is not applied', async () => {
+    mocks.state.rows.item_files = [file('a', 'uploads/a.jpg', '2026-08-01')];
+    mocks.state.columnMissing = true;
+    stubBridge();
+    const body = await data(await GET(request()));
+    expect(body.manifest).toBe(true);
+    expect(body.filePhase).toBe('unavailable');
+    expect(mocks.problem.mock.calls.some(([row]) => row.message.includes('migration 0040'))).toBe(true);
+  });
+});
+

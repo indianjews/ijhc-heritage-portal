@@ -105,11 +105,12 @@ src/lib/
                               source per key, used by `npm run i18n` to know what is stale
   supabase/                   server.ts (session client, getCurrentVolunteer/getCurrentAdmin),
                               admin.ts (service role — server only)
-  backup/                     off-site backup destinations: s3.ts (SigV4 by hand), gdrive-bridge.ts
+  backup/                     off-site backup destinations: s3.ts (SigV4 by hand), drive-files.ts
+                              (incremental media copy to Drive files/, 25 MB limit), gdrive-bridge.ts
                               (Apps Script Web App; secret in the JSON body, redacted from every error)
   rate-limit.ts               in-memory limiter (per instance; good enough against casual spam)
 
-supabase/migrations/          0001…0037, applied in order. Never edit an applied migration.
+supabase/migrations/          0001…0040, applied in order. Never edit an applied migration.
 tests/unit/                   Vitest (≈554 tests). tests/e2e/ Playwright (permissions, admin).
 scripts/                      deploy, backup, seed, translate-ui, backfill-checksums, guides/capture
 docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisions), phase reports
@@ -122,7 +123,7 @@ docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisi
 | Table | What | Who reads / writes |
 |---|---|---|
 | `items` | the record. `status` pending/accepted/rejected/shadow_gallery; `category` (NULL = not catalogued → never public); `deleted_at` = in the bin; `reviewed_by`, `uploaded_by`; `collector_name`, `collector_credit_required` | public reads accepted+public+not binned+catalogued; experts write via policies (0036 rule for accepted rows) |
-| `item_files` | files of an item; `checksum` = SHA-256 | via items |
+| `item_files` | files of an item; `checksum` = SHA-256; `backed_up_at` = when the Drive backup copied the bytes (NULL = not yet; 0040) | via items |
 | `ai_analyses` | the machine reading per file; `status` succeeded/failed/pending; `retry_count`, `last_retry_at` | experts only |
 | `item_fields` | catalogue values, `source` contributor/ai/expert | experts write (0036) |
 | `keywords`, `keyword_translations`, `keyword_candidates` (`source` ai/contributor, `item_id`) | vocabulary | public reads keywords; experts judge candidates |
@@ -150,7 +151,7 @@ Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומח�
 | `PUT/DELETE /api/items/[id]/draft` | review drafts | expert, own |
 | `/api/items/[id]/duplicates` | not-a-duplicate / merge into older | expert (+0036 rule for published) |
 | `/api/items/[id]/reread`, `/api/cron/reread` | retry a failed reading (cron daily 01:15 UTC, ≤ `AI_RETRY_DAILY`, 3 tries max) | expert / cron secret |
-| `GET /api/cron/backup` | nightly off-site copy (21:45 UTC): Google Drive via the Apps Script bridge (`src/lib/backup/gdrive-bridge.ts`) when `BACKUP_GDRIVE_*` is set, else S3 (`src/lib/backup/s3.ts`); every table live-counted and read in 1000-row pages; Drive gets a manifest last and keeps 14 runs | cron secret + `CRON_HOME=1` |
+| `GET /api/cron/backup` | nightly off-site copy (21:45 UTC): Google Drive via the Apps Script bridge (`src/lib/backup/gdrive-bridge.ts`) when `BACKUP_GDRIVE_*` is set, else S3 (`src/lib/backup/s3.ts`); every table live-counted and read in 1000-row pages; Drive gets a manifest last and keeps 14 runs, then copies media files incrementally to a permanent `files/` folder (`item_files.backed_up_at`, migration 0040; ≤ 20 files and 25 MB each per run; `src/lib/backup/drive-files.ts`) | cron secret + `CRON_HOME=1` |
 | `/api/records/[id]/feedback` | public comment or correction (honeypot, timing, rate limit) | public |
 | `/api/corrections/[id]/decision`, `/objection` | accept/decline; uploader's objection via signed link | expert / signed token |
 | `/api/auth/forgot`, `/api/auth/reset` | password reset by our own email; always a neutral answer | public, rate limited |

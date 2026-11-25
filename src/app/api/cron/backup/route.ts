@@ -14,6 +14,7 @@ import {
   redact,
   type BridgeConfig,
 } from '@/lib/backup/gdrive-bridge';
+import { backupFilesToDrive } from '@/lib/backup/drive-files';
 import { recordProblem } from '@/lib/problems/record';
 import { problemCode } from '@/lib/problems/code';
 
@@ -46,10 +47,12 @@ import { problemCode } from '@/lib/problems/code';
  *   <date>/tables/<table>.json   every table, one file each
  *   <date>/manifest.json         written last, only when every table landed
  *                                whole; its absence marks an incomplete run
+ *   files/<storage path>         each file's bytes, once, ever — outside the
+ *                                dated folders, so retention never reaches them
  *
- * The Drive destination copies the database only. File bytes need a way to
- * ask the bridge what it already holds (`list_files`), or every night would
- * re-upload the whole bucket; until then the response says so in as many words.
+ * Files go incrementally: `item_files.backed_up_at` (migration 0040) marks what
+ * Drive already holds, and each run sends the oldest unmarked files with
+ * whatever budget the tables left (src/lib/backup/drive-files.ts).
  *
  * The database is written **fresh every night** and dated, so any night can be
  * restored and last night's mistake does not overwrite the good copy. Files are
@@ -149,7 +152,7 @@ export async function GET(request: NextRequest) {
     const day = new Date().toISOString().slice(0, 10);
 
     if (drive.state === 'ok') {
-      return ok(await backupToDrive(drive.config, { dump, counts, expected, short, day, started, deadline }));
+      return ok(await backupToDrive(drive.config, { dump, counts, expected, short, day, started, deadline, admin }));
     }
     // `to` is non-null here: the unset-and-unset case returned above.
     if (!to) throw new Error('unreachable: no destination');
@@ -326,6 +329,7 @@ async function backupToDrive(
     day: string;
     started: number;
     deadline: number;
+    admin: ReturnType<typeof createAdminSupabase>;
   },
 ) {
   const client = createBridgeClient(config, { deadline: run.deadline });
@@ -378,7 +382,7 @@ async function backupToDrive(
           tables: TABLES,
           counts: run.counts,
           expected: run.expected,
-          files: 'not included: file bytes are not yet copied by the Drive destination',
+          files: 'copied incrementally to files/<storage_path>; item_files.backed_up_at records which',
         }, null, 2),
       });
       manifest = true;
@@ -399,14 +403,19 @@ async function backupToDrive(
     }
   }
 
+  // ── the files, with whatever budget the tables left ──────────────────────
+  // Independent of the manifest: a file copied tonight is safe whether or not
+  // tonight's tables were complete.
+  const files = await backupFilesToDrive({ admin: run.admin, client, deadline: run.deadline, report });
+
   return {
     configured: true,
     destination: 'gdrive',
     database: { folder, counts: run.counts, expected: run.expected, short: run.short, uploaded: uploaded.length, failed },
     manifest,
     pruned,
-    files: { copied: 0, note: 'File bytes are not copied to Google Drive yet; the S3 destination copies them.' },
     stopped,
+    ...files,
     ms: Date.now() - run.started,
   };
 }

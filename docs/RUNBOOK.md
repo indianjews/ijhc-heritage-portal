@@ -78,6 +78,7 @@ npx vercel --prod --yes --scope indianjews
 
 | Migration | What it did | To undo |
 |---|---|---|
+| 0040 | `item_files.backed_up_at` (nullable) + partial index `item_files_not_backed_up` on `created_at` where it is NULL. **Not applied automatically** — run it in the SQL editor before the code; until then the Drive file phase answers `filePhase: "unavailable"` and the table backup still runs | `begin; drop index if exists public.item_files_not_backed_up; alter table public.item_files drop column if exists backed_up_at; commit;` — only loses the "already copied" marks; later runs re-upload every file |
 | 0037 | collector credit columns, `keyword_candidates.source/item_id`, `record_comments` (+ public view), `record_corrections` | Drop the two tables and the view; the columns are safe to leave. Code from 20.10 needs them |
 | 0036 | `items.uploaded_by`, `can_edit_published`, owner rule on items/item_fields/item_families/item_translations policies, `review_drafts`, `similar_review_terms` | Restore the previous policy bodies from 0007/0012/0023 (`is_volunteer()`), drop `review_drafts`. Code from 20.10 needs them |
 | 0035 | `ai_analyses.retry_count`, `last_retry_at`, `claim_reading_retry()` | Drop the function; columns safe to leave |
@@ -118,7 +119,7 @@ It runs only on the deployment with `CRON_HOME=1` and only with the
 
 | Set | Destination | What it writes |
 |---|---|---|
-| `BACKUP_GDRIVE_WEBHOOK_URL` + `BACKUP_GDRIVE_SECRET` | private Google Drive folder, via the Apps Script bridge (wins over S3) | `<date>/tables/<table>.json` for every table, then `<date>/manifest.json` |
+| `BACKUP_GDRIVE_WEBHOOK_URL` + `BACKUP_GDRIVE_SECRET` | private Google Drive folder, via the Apps Script bridge (wins over S3) | `<date>/tables/<table>.json` for every table, then `<date>/manifest.json`; media files once each under `files/<storage path>` (needs migration 0040) |
 | `BACKUP_S3_*` | S3-compatible bucket | `<prefix>/<date>/database.json.gz`, plus `<prefix>/files/<path>` once per file |
 | neither | nothing | answers `configured: false` |
 | only one of the two Drive variables, or a URL that is not `https://script.google.com/macros/s/…/exec`, or a secret under 32 characters | nothing | answers **500 `backup_misconfigured`** and logs a problem |
@@ -133,9 +134,35 @@ pages. A table that reads short is listed under `database.short` and logged.
 - After a complete run the oldest run folders (named `YYYY-MM-DD`) beyond the
   newest 14 are trashed (Drive's bin, recoverable for 30 days). Other folders
   in the backup folder are never touched. A failed run never prunes.
-- File bytes (scans, audio) are **not** copied to Drive yet; the response says
-  so. Keep the S3 destination or `scripts/backup.ts` for files until the
-  bridge gains a `list_files` action.
+- **Media files** (images, PDFs, audio, video from the `heritage` bucket) go
+  to a permanent `files/` folder that mirrors the bucket
+  (`uploads/2026/08/<uuid>-scan.jpg` → `files/uploads/2026/08/<uuid>-scan.jpg`).
+  It is never inside a dated folder, so pruning never reaches it; restore a
+  file from `files/` + its `storage_path`.
+- Files go **incrementally**: `item_files.backed_up_at` is set only after the
+  bridge confirms the upload. Each run takes the oldest unmarked files, at
+  most 20, with whatever budget the tables left, and starts no file with
+  under 8 s left (under 20 s for one over 8 MB). A failed file stays NULL
+  and is retried on a later night. Only masters are copied, not
+  `preview_path` renditions, which can be rebuilt from them.
+- **Size limit: 25 MB per file.** An Apps Script Web App takes a request body
+  of about 50 MB, and base64 adds a third. Larger files are never
+  downloaded; they are listed under `filesSkippedOversize`, and one problem
+  per run names them. Back those up with `scripts/backup.ts` or the S3
+  destination. They stay in `filesRemaining`, so that number does not reach
+  0 while any exist.
+- File-phase fields in the response: `filesBackedUp`, `filesFailed`,
+  `filesSkippedOversize`, `filesRemaining` (exact count of files with no
+  off-site copy yet), and `filePhase`: `done`, `budget` (time ran out;
+  tomorrow continues), or `unavailable` (migration 0040 not applied).
+- At 20 files a night the first pass over an existing bucket takes
+  (number of files ÷ 20) nights. Run the cron by hand (below) to speed it up;
+  each call continues where the last stopped.
+- **Re-uploads:** a file whose upload timed out on our side may still have
+  reached Drive. It is not marked, so it is sent again on a later night.
+  Whether that replaces or duplicates the Drive copy depends on the Apps
+  Script's `upload` (it should replace a file of the same name in the same
+  folder).
 - A failed upload is logged in `/manage/problems` with the bridge's reason.
   The secret and the deployment id are redacted from every message.
 - The response's `stopped: "budget"` means the 45-second budget ran out
