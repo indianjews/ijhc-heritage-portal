@@ -131,7 +131,7 @@ export function FilePreview({
       <Placeholder
         icon={<FileText size={22} />}
         label={t('file.capturedPage')}
-        href={src}
+        href={still ? undefined : src}
         className={className}
       />
     );
@@ -142,13 +142,13 @@ export function FilePreview({
       <Placeholder
         icon={<FileText size={22} />}
         label={t('file.pdf')}
-        href={src}
+        href={still ? undefined : src}
         className={className}
       />
     );
   }
 
-  return <Placeholder icon={<Video size={22} />} label={file.mime_type} href={src} className={className} />;
+  return <Placeholder icon={<Video size={22} />} label={file.mime_type} href={still ? undefined : src} className={className} />;
 }
 
 function Placeholder({
