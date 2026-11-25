@@ -109,6 +109,47 @@ order they appear in `TABLES` in `scripts/backup.ts` (parents before children).
 **Take a fresh backup before restoring anything.** A restore over live data is
 itself destructive.
 
+### The nightly off-site copy (`/api/cron/backup`, 21:45 UTC)
+
+It runs only on the deployment with `CRON_HOME=1` and only with the
+`CRON_SECRET` bearer token. Where it writes depends on the environment:
+
+| Set | Destination | What it writes |
+|---|---|---|
+| `BACKUP_GDRIVE_WEBHOOK_URL` + `BACKUP_GDRIVE_SECRET` | private Google Drive folder, via the Apps Script bridge (wins over S3) | `<date>/tables/<table>.json` for every table, then `<date>/manifest.json` |
+| `BACKUP_S3_*` | S3-compatible bucket | `<prefix>/<date>/database.json.gz`, plus `<prefix>/files/<path>` once per file |
+| neither | nothing | answers `configured: false` |
+| only one of the two Drive variables, or a URL that is not `https://script.google.com/macros/s/…/exec`, or a secret under 32 characters | nothing | answers **500 `backup_misconfigured`** and logs a problem |
+
+Every table is counted with `count: 'exact'` before it is read in 1000-row
+pages. A table that reads short is listed under `database.short` and logged.
+
+**Drive specifics.**
+- `manifest.json` is written last, and only when every table uploaded and
+  none read short. **A dated folder without `manifest.json` is an incomplete
+  run — do not restore from it.**
+- After a complete run the oldest run folders (named `YYYY-MM-DD`) beyond the
+  newest 14 are trashed (Drive's bin, recoverable for 30 days). Other folders
+  in the backup folder are never touched. A failed run never prunes.
+- File bytes (scans, audio) are **not** copied to Drive yet; the response says
+  so. Keep the S3 destination or `scripts/backup.ts` for files until the
+  bridge gains a `list_files` action.
+- A failed upload is logged in `/manage/problems` with the bridge's reason.
+  The secret and the deployment id are redacted from every message.
+- The response's `stopped: "budget"` means the 45-second budget ran out
+  before every table was sent; tomorrow's run starts again from the first
+  table.
+
+Check it by hand (from a machine with the secret, never in a chat):
+
+```bash
+curl -s -H "Authorization: Bearer $CRON_SECRET" https://archive.indianjews.org/api/cron/backup
+```
+
+**Rotating the bridge secret:** set the new value in the Apps Script's
+properties and in Vercel's `BACKUP_GDRIVE_SECRET` together, then redeploy;
+one run fails in between if they disagree.
+
 ---
 
 ## Rollback triggers
