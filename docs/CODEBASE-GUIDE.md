@@ -66,7 +66,7 @@ src/app/                      pages and API routes (App Router)
                               grid/list toggle, multi-select, bulk approve; "published without a category"
   review/[id]/page.tsx        the workbench (component: review-workbench.tsx)
   review/bulk-upload/         experts' bulk upload (component: bulk-upload-flow.tsx): many items, each with
-                              media (images/videos and/or a YouTube link), notes, required dating or
+                              media (allow-listed images, PDFs, videos and/or a YouTube link), notes, required dating or
                               "Date unknown", required copyright yes/no; sent one item per request; the
                               AI reading is queued (0041), never run while the expert waits
   review/corrections/         public corrections awaiting a decision (from → to diff)
@@ -155,7 +155,7 @@ Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומח�
 | `PUT/DELETE /api/items/[id]/draft` | review drafts | expert, own |
 | `/api/items/[id]/duplicates` | not-a-duplicate / merge into older | expert (+0036 rule for published) |
 | `/api/items/[id]/reread`, `/api/cron/reread` | retry a failed reading (cron daily 01:15 UTC, ≤ `AI_RETRY_DAILY`, 3 tries max) | expert / cron secret |
-| `POST /api/items/bulk-upload-item` | one item of an expert bulk upload: Zod (`src/lib/items/bulk-upload.ts`, shared with the screen), granted files only, forces `pending`, no category, `uploaded_by` = expert, period/credit from the expert; images get a `queued` reading, videos none; 503 `migration_required` until 0041 | expert (`getCurrentVolunteer`) |
+| `POST /api/items/bulk-upload-item` | one item of an expert bulk upload: Zod (`src/lib/items/bulk-upload.ts`, shared with the screen), granted files only, forces `pending`, no category, `uploaded_by` = expert, period/credit from the expert; images and PDFs get a `queued` reading, videos none; 503 `migration_required` until 0041 | expert (`getCurrentVolunteer`) |
 | `GET /api/cron/process-pending-ai` | reads queued analyses at quiet hours (23:30 UTC): skips if ≥ `AI_QUEUE_BUSY_THRESHOLD` live readings in 20 min (`busy`) or if today's Pacific-day usage would eat into `AI_QUEUE_RESERVE` of `AI_DAILY_BUDGET` (`quota_reserve`); ≤ `AI_QUEUE_PER_RUN` per run; sends the expert's notes and an `<attached-media>` note for video/YouTube, never video bytes (`src/lib/items/ai-queue*.ts`) | cron secret + `CRON_HOME=1` |
 | `GET /api/cron/backup` | nightly off-site copy (21:45 UTC): Google Drive via the Apps Script bridge (`src/lib/backup/gdrive-bridge.ts`) when `BACKUP_GDRIVE_*` is set, else S3 (`src/lib/backup/s3.ts`); every table live-counted and read in 1000-row pages; Drive gets a manifest last and keeps 14 runs, then copies media files incrementally to a permanent `files/` folder (`item_files.backed_up_at`, migration 0040; ≤ 20 files and 25 MB each per run; `src/lib/backup/drive-files.ts`) | cron secret + `CRON_HOME=1` |
 | `/api/records/[id]/feedback` | public comment or correction (honeypot, timing, rate limit) | public |

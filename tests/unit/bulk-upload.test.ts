@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { ALLOWED_MIME_TYPES } from '@/lib/files/validate';
 import {
+  BULK_ACCEPT,
   BulkItemBody,
   bulkFileAccepted,
   bulkItemValues,
@@ -44,15 +46,28 @@ describe('media first', () => {
     expect(issues(body({ youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }))).toEqual({});
   });
 
-  it('accepts only images and videos from the regular allow-list', () => {
-    expect(bulkFileAccepted('image/jpeg')).toBe(true);
-    expect(bulkFileAccepted('video/mp4')).toBe(true);
-    expect(bulkFileAccepted('application/pdf')).toBe(false);
-    expect(bulkFileAccepted('audio/mpeg')).toBe(false);
-    expect(bulkFileAccepted('image/svg+xml')).toBe(false);
-    expect(issues(body({ files: [file({ mimeType: 'application/pdf' })] }))).toMatchObject({ 'files.0.mimeType': 'bulk.err.fileTypeServer' });
+  it.each(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/tiff', 'application/pdf', 'video/mp4', 'video/webm', 'video/quicktime'])(
+    'accepts %s from the regular allow-list', (mimeType) => {
+      expect(bulkFileAccepted(mimeType)).toBe(true);
+      expect(issues(body({ files: [file({ mimeType })] }))).toEqual({});
+    },
+  );
+
+  it('covers every image, PDF and video type on the allow-list, and nothing else', () => {
+    const expected = ALLOWED_MIME_TYPES.filter((t) => t.startsWith('image/') || t.startsWith('video/') || t === 'application/pdf');
+    expect(ALLOWED_MIME_TYPES.filter(bulkFileAccepted)).toEqual(expected);
+    expect(BULK_ACCEPT.split(',')).toEqual(expected);
+  });
+
+  it.each(['audio/mpeg', 'text/plain', 'image/svg+xml', 'image/heic', 'application/zip', ''])('refuses %j', (mimeType) => {
+    expect(bulkFileAccepted(mimeType)).toBe(false);
+    expect(issues(body({ files: [file({ mimeType })] }))).toMatchObject({ 'files.0.mimeType': 'bulk.err.fileTypeServer' });
+  });
+
+  it('treats only videos as unreadable; images and PDFs are read', () => {
     expect(isVideo('video/quicktime')).toBe(true);
     expect(isVideo('image/png')).toBe(false);
+    expect(isVideo('application/pdf')).toBe(false);
   });
 });
 

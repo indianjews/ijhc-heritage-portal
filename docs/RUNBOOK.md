@@ -116,20 +116,20 @@ itself destructive.
 ### The quiet-hours AI queue (`/api/cron/process-pending-ai`, 23:30 UTC)
 
 Items from `/review/bulk-upload` are saved without calling the model; each
-image's `ai_analyses` row is `queued`. This cron reads a few of them each
+image's and PDF's `ai_analyses` row is `queued`. This cron reads a few of them each
 night. Only on the deployment with `CRON_HOME=1`, only with `CRON_SECRET`.
 
 It answers with one of:
 
 | Answer | Meaning | What to do |
 |---|---|---|
-| `attempted: N` | read N queued images (each one model call) | nothing |
+| `attempted: N` | read N queued images or PDFs (each one model call) | nothing |
 | `skipped: "busy"` | ≥ `AI_QUEUE_BUSY_THRESHOLD` (default 2) live readings in the last 20 minutes — people come first | nothing; tomorrow's run tries again |
 | `skipped: "quota_reserve"` | today's usage (US Pacific day, counted from `ai_analyses` like `npm run quota`) plus this run would eat into `AI_QUEUE_RESERVE` (default 8) of `AI_DAILY_BUDGET` (default 20) | nothing, or raise `AI_DAILY_BUDGET` once billing is on |
 | `skipped: "disabled"` | `AI_QUEUE_PER_RUN=0` | — |
 
 `remainingPending` is how many queued readings are left. At the default four
-a night, 40 queued images take ten nights; raise `AI_QUEUE_PER_RUN` (max 10)
+a night, 40 queued files take ten nights; raise `AI_QUEUE_PER_RUN` (max 10)
 or run the cron by hand at a quiet hour:
 
 ```bash
@@ -141,7 +141,7 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" https://archive.indianjews.org/a
   (`/api/cron/reread`) reads it as abandoned. A failed queued reading is an
   ordinary failed reading from then on (retry button, nightly retry).
 - Video files are never sent to the model and get no reading. A record with a
-  video file or a YouTube link is read from its images and the expert's
+  video file or a YouTube link is read from its images/PDFs and the expert's
   notes, with an `<attached-media>` note telling the model the recording
   exists and must not be described.
 - A YouTube-only item (no image) has nothing to read; it waits for an expert.

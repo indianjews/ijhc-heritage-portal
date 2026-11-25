@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { youtubeVideoId } from '@/lib/links/youtube';
-import { fileKind, validateFile } from '@/lib/files/validate';
+import { ALLOWED_MIME_TYPES, fileKind, validateFile } from '@/lib/files/validate';
 
 /**
  * The rules for one item of a content expert's bulk upload, in one place.
@@ -14,13 +14,22 @@ import { fileKind, validateFile } from '@/lib/files/validate';
  * can say them in the reader's language.
  */
 
-/** What the bulk screen takes: images and short videos from the regular allow-list. */
+/**
+ * What the bulk screen takes: every image format and every video format on the
+ * regular allow-list, and PDFs. Audio and text captures stay on /upload.
+ */
 export function bulkFileAccepted(mimeType: string): boolean {
   const kind = fileKind(mimeType);
-  return (kind === 'image' || kind === 'video') && validateFile({ mimeType, byteSize: 1 }) === null;
+  return (kind === 'image' || kind === 'video' || kind === 'pdf') && validateFile({ mimeType, byteSize: 1 }) === null;
 }
 
-/** Video bytes are never sent to the model; everything else readable is queued. */
+/**
+ * The file picker's `accept`, derived from the allow-list so the two cannot
+ * drift: `image/*` would offer SVG and HEIC files the server then refuses.
+ */
+export const BULK_ACCEPT = ALLOWED_MIME_TYPES.filter(bulkFileAccepted).join(',');
+
+/** Video bytes are never sent to the model; images and PDFs are queued for reading. */
 export function isVideo(mimeType: string): boolean {
   return fileKind(mimeType) === 'video';
 }

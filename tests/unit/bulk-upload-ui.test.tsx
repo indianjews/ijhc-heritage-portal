@@ -65,6 +65,27 @@ describe('the bulk-upload screen in Hebrew', () => {
     expect(screen.getByLabelText(HE['bulk.youtube'])).toHaveAttribute('dir', 'ltr');
   });
 
+  it('offers exactly the accepted images, PDFs and videos in the file picker', () => {
+    const { container } = renderHebrew();
+    const picker = container.querySelector('input[type=file]')!;
+    expect(picker.getAttribute('accept')!.split(',')).toEqual([
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/tiff', 'application/pdf', 'video/mp4', 'video/webm', 'video/quicktime',
+    ]);
+    expect(picker).toHaveAttribute('multiple');
+    expect(screen.getByText(HE['bulk.chooseFiles'])).toBeInTheDocument();
+  });
+
+  it('lists a picked PDF and refuses an audio file with a Hebrew message', () => {
+    const { container } = renderHebrew();
+    const picker = container.querySelector('input[type=file]')!;
+    const pdf = new File([new Uint8Array(10)], 'תוכנייה.pdf', { type: 'application/pdf' });
+    const audio = new File([new Uint8Array(10)], 'שיר.mp3', { type: 'audio/mpeg' });
+    fireEvent.change(picker, { target: { files: [pdf, audio] } });
+    expect(screen.getByText('תוכנייה.pdf')).toBeInTheDocument();
+    expect(screen.queryByText('שיר.mp3')).not.toBeInTheDocument();
+    expect(screen.getByText(HE['bulk.err.fileType'].replace('{name}', 'שיר.mp3'))).toBeInTheDocument();
+  });
+
   it('refuses to send until media, dating and copyright are answered, and says why in Hebrew', () => {
     renderHebrew();
     fireEvent.click(screen.getByRole('button', { name: /שליחת הכול/ }));

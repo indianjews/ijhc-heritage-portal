@@ -11,7 +11,7 @@ import { uploadSignedFile } from '@/lib/files/upload';
 import { measureDuration } from '@/lib/files/measure';
 import { validateFile } from '@/lib/files/validate';
 import { youtubeVideoId } from '@/lib/links/youtube';
-import { bulkFileAccepted, cardErrors, type CardErrorKey, type CardField } from '@/lib/items/bulk-upload';
+import { BULK_ACCEPT, bulkFileAccepted, cardErrors, type CardErrorKey, type CardField } from '@/lib/items/bulk-upload';
 import { cn } from '@/lib/utils';
 
 /**
@@ -27,7 +27,7 @@ import { cn } from '@/lib/utils';
  * the batch: the card keeps everything typed and can be sent again on its own.
  *
  * Nothing here calls the model. The server queues each image's reading for the
- * quiet-hours cron, so an expert never waits for Gemini and never spends the
+ * quiet-hours cron (images and PDFs; never videos), so an expert never waits for Gemini and never spends the
  * daily allowance that live contributors need.
  *
  * ── the field order is the point ────────────────────────────────────────────
@@ -392,7 +392,7 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
           <p className="text-sm text-muted">{t('bulk.mediaHint')}</p>
           <label className={buttonClass('quiet', 'cursor-pointer')}>
             <Plus size={18} aria-hidden /> {t('bulk.chooseFiles')}
-            <input type="file" multiple accept="image/*,video/*" className="sr-only" onChange={pick} />
+            <input type="file" multiple accept={BULK_ACCEPT} className="sr-only" onChange={pick} />
           </label>
           {card.fileError && <p role="alert" className="text-sm text-critical">{card.fileError}</p>}
           {card.files.length > 0 && (

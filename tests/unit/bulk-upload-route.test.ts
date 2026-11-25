@@ -109,6 +109,19 @@ describe('what it forces', () => {
     expect(video).toMatchObject({ analysis: null, analysisQueued: false, noAnalysis: true });
   });
 
+  it('queues a PDF for reading like an image', async () => {
+    await post(body({ files: [granted('uploads/2026/11/c-programme.pdf', 'application/pdf', 'programme.pdf')] }));
+    expect(mocks.createItem.mock.calls[0][0].files[0]).toMatchObject({
+      mimeType: 'application/pdf', analysis: null, analysisQueued: true, noAnalysis: false,
+    });
+  });
+
+  it('refuses an audio file, which belongs on the regular upload', async () => {
+    const response = await post(body({ files: [granted('uploads/2026/11/d.mp3', 'audio/mpeg', 'd.mp3')] }));
+    expect(response.status).toBe(400);
+    expect(mocks.createItem).not.toHaveBeenCalled();
+  });
+
   it('ignores a status or category smuggled into the body', async () => {
     await post({ ...body(), status: 'accepted', category: 'documents' });
     const input = mocks.createItem.mock.calls[0][0];

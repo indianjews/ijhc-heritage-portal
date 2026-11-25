@@ -19,8 +19,8 @@ import { clientKey, rateLimit } from '@/lib/rate-limit';
  *     every submission, the write goes through the service role in createItem)
  *   - every file was minted for this caller by /api/uploads/sign (the grant)
  *   - status `pending`, category NULL, `uploaded_by` = the expert
- *   - no model call now: each image's reading is `queued` for the quiet-hours
- *     cron; video files get no reading at all — their bytes are never sent
+ *   - no model call now: each image's and PDF's reading is `queued` for the
+ *     quiet-hours cron; video files get no reading at all — their bytes are never sent
  */
 /** createItem reads each stored file back to compute its SHA-256 server-side. */
 export const maxDuration = 300;
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         fileName: file.fileName,
         mimeType: file.mimeType,
         byteSize: file.byteSize,
-        // Images are measured from the bytes when they are read; never guessed here.
+        // Images and PDFs are measured from the bytes when they are read; never guessed here.
         width: null,
         height: null,
         durationMs: file.durationMs ?? null,
