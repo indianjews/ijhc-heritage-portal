@@ -7,6 +7,7 @@ import { buildStoragePath, isValidStorageKey } from '@/lib/files/paths';
 import { MAX_FILE_BYTES, validateFile } from '@/lib/files/validate';
 import { clientKey, rateLimit } from '@/lib/rate-limit';
 import { createAdminSupabase } from '@/lib/supabase/admin';
+import { findDuplicateHint } from '@/lib/items/queries';
 
 const Body = z.object({
   checksum: z.string().regex(/^[a-f0-9]{64}$/).optional(),
@@ -51,9 +52,19 @@ export async function POST(request: NextRequest) {
 
     if (error || !data) return fail(502, 'storage_unavailable', t('err.uploadNotStarted'));
 
+    // Already in the archive? Told to the contributor, never blocking. Only a
+    // published record is ever identified (see src/lib/files/duplicate-hint.ts);
+    // a lookup that fails costs the hint, not the upload.
+    const duplicate = parsed.data.checksum
+      ? await findDuplicateHint(parsed.data.checksum).catch((lookupError) => {
+        console.error('[uploads] duplicate lookup failed', lookupError);
+        return null;
+      })
+      : null;
+
     // The grant is what lets /api/analyze and /api/items know this path came
     // from here rather than from a stranger who guessed one.
-    return ok({ path: data.path, token: data.token, ...issueGrant(data.path) });
+    return ok({ path: data.path, token: data.token, ...issueGrant(data.path), duplicate });
   } catch (error) {
     return unexpected(error, '/api/uploads/sign');
   }

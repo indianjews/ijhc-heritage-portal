@@ -10,15 +10,16 @@ import he from '@/lib/i18n/locales/he.json';
 
 describe('credit text', () => {
   it.each([
-    [null, null, '© Indian Jewish Heritage Center'],
-    ['Levi', null, '© Levi collection · Indian Jewish Heritage Center'],
-    [null, 'Sara', 'Shared by Sara · © Indian Jewish Heritage Center'],
-    ['Levi', 'Sara', '© Levi collection · Shared by Sara · Indian Jewish Heritage Center'],
-    [' ', '\n', '© Indian Jewish Heritage Center'],
+    // The Center is named as the archive, never as owner: no © without a named rights holder.
+    [null, null, 'Indian Jewish Heritage Center archive'],
+    ['Levi', null, '© Levi collection · Indian Jewish Heritage Center archive'],
+    [null, 'Sara', 'Shared by Sara · Indian Jewish Heritage Center archive'],
+    ['Levi', 'Sara', '© Levi collection · Shared by Sara · Indian Jewish Heritage Center archive'],
+    [' ', '\n', 'Indian Jewish Heritage Center archive'],
   ])('builds %s / %s', (collector, source, result) => expect(creditText(collector, source)).toBe(result));
   it('preserves Hebrew names and translates labels by hand', () => {
     expect(creditText('לוי', 'שרה')).toContain('© לוי collection · Shared by שרה');
-    expect(creditText('לוי', 'שרה', (key, vars) => format((he as Record<string,string>)[key] ?? en[key], vars))).toBe('© אוסף לוי · שותף על ידי שרה · מרכז מורשת יהדות הודו');
+    expect(creditText('לוי', 'שרה', (key, vars) => format((he as Record<string,string>)[key] ?? en[key], vars))).toBe('© אוסף לוי · שותף על ידי שרה · ארכיון מרכז מורשת יהדות הודו');
   });
   it('escapes user markup once', () => expect(escapePango('A & <B> "C"')).toBe('A &amp; &lt;B&gt; &quot;C&quot;'));
   it('truncates unicode names without splitting surrogate pairs', () => expect(creditName('😀'.repeat(60), 48)).toBe('😀'.repeat(47)+'…'));

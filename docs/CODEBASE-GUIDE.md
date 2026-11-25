@@ -58,9 +58,13 @@ Also: the site is **light only** (no dark mode, anywhere); every user-facing str
 ```
 src/app/                      pages and API routes (App Router)
   page.tsx                    home: hero, counts, "Recently added" (catalogued + published only)
-  portal/page.tsx             public archive: full-word search + advanced filters (all in the URL)
-  portal/[id]/page.tsx        public record: media, fields (linked when shared), credit line,
-                              approver name, comments, "suggest a correction", edit link for owners
+  portal/page.tsx             public archive: full-word search + advanced filters (all in the URL);
+                              `?person=` = every published record naming that contributor (`source`)
+                              or collector (`collector_name`), whole name, case-insensitive
+  portal/[id]/page.tsx        public record: media, fields (linked when shared), credit line (names
+                              linked to ?person=; the Center is "the archive", never "©" owner, plus
+                              the Terms' rights sentence), approver name, comments, "suggest a
+                              correction", edit link for owners
   upload/page.tsx             the contribution flow (component: upload-flow.tsx)
   review/page.tsx             queue: My drafts → ready (oldest first) → reading incomplete;
                               grid/list toggle, multi-select, bulk approve; "published without a category"
@@ -148,7 +152,7 @@ Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומח�
 
 | Path | What it does | Guard |
 |---|---|---|
-| `POST /api/uploads/sign` | signed upload URL into the private `heritage` bucket | public, validated, size/type limited |
+| `POST /api/uploads/sign` | signed upload URL into the private `heritage` bucket; with the browser's SHA-256 also a non-blocking `duplicate` hint for /upload — `{ publishedId }` only for a record published to everyone, `{ publishedId: null }` for any other match (`src/lib/files/duplicate-hint.ts`) | public, validated, size/type limited |
 | `POST /api/analyze` | Gemini reading (counts against the daily quota) | public, rate limited |
 | `POST /api/items` | creates an item: forces `pending`, stores checksums, flags duplicates, records contributor tag proposals, sets `uploaded_by` for signed-in experts | public, Zod |
 | `POST /api/items/[id]/review` / `POST /api/items/bulk-review` | the decision (same handler); publishing needs a category | expert; accepted records need the 0036 rule |

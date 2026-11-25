@@ -31,8 +31,9 @@ export const en = {
   'tags.expertHint': 'Choose any term or type a new one. New terms are added to the vocabulary when you select them.',
   'credit.collection': "© {collector} collection",
   'credit.shared': "Shared by {source}",
-  'credit.center': "Indian Jewish Heritage Center",
-  'credit.centerCopyright': "© Indian Jewish Heritage Center",
+  'credit.center': "Indian Jewish Heritage Center archive",
+  'credit.rights': "Rights in this item stay with the person or family who holds them; the Center preserves and publishes it with their permission.",
+  'credit.terms': "Terms of use",
   'login.intro': 'Reviewing submissions needs an account. Browsing and contributing do not — those are open to everyone.',
   'review3.signIn': 'Sign in as an approved content expert.',
   'review3.missing': 'This record is no longer available.',
@@ -339,6 +340,7 @@ export const en = {
   'record.readItIn': 'Read it in {language}',
   'record.provenance': 'Provenance',
   'record.contributor': "User",
+  'record.personLink': "All published items credited to {name}",
   'record.capturedFrom': 'Captured from',
   'record.period': 'Period',
   'record.placeOfOrigin': 'Place of origin',
@@ -960,6 +962,7 @@ export const en = {
   'filters.type': 'Type',
   'filters.text': 'Search the archive by any word',
   'filters.contributor': "User email",
+  'filters.person': "Contributor or collector",
   'filters.clear': 'Clear filters',
   'filters.showing': 'Showing {shown} of {total}',
   'filters.more': 'More filters',
@@ -1308,6 +1311,11 @@ export const en = {
   'bulk.err.upload': "A file could not be uploaded. Check the connection and send this item again.",
   'bulk.err.failed': "This item could not be saved. Send it again.",
   'bulk.err.migration': "Bulk upload is not available yet: the database update it needs (migration 0041) has not been applied.",
+  // Duplicate file notice on /upload (from /api/uploads/sign).
+  'upload.duplicate.heading': "This may already be in the archive",
+  'upload.duplicate.file': "{name} is identical to a file the archive already holds.",
+  'upload.duplicate.view': "See the published record",
+  'upload.duplicate.proceed': "You can still send it — especially if you know something about it that may be missing: a name, a date, a place.",
 } as const;
 
 export type MessageKey = keyof typeof en;

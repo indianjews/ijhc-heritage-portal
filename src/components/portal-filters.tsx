@@ -25,7 +25,7 @@ function FilterForm({ view, options, shown, total }: { view: string; options: Fa
   const [pending, startTransition] = useTransition();
   const [text, setText] = useState(params.get('q') ?? '');
   const [email, setEmail] = useState(params.get('contributor') ?? '');
-  const activeKeys = [...FACETS, 'q', 'contributor', 'from', 'to'].filter(key => params.get(key));
+  const activeKeys = [...FACETS, 'q', 'person', 'contributor', 'from', 'to'].filter(key => params.get(key));
   const advanced = [...FACETS.slice(2), 'contributor', 'from', 'to'].some(key => params.has(key));
   const control = 'min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-accent-strong';
 
@@ -38,7 +38,7 @@ function FilterForm({ view, options, shown, total }: { view: string; options: Fa
     startTransition(() => router.push(`/portal?${next}`, { scroll: false }));
   }
   function label(key: string) {
-    return t(key === 'q' ? 'filters.text' : key === 'contributor' ? 'filters.contributor' : `filters.${key}` as MessageKey);
+    return t(key === 'q' ? 'filters.text' : key === 'contributor' ? 'filters.contributor' : key === 'person' ? 'filters.person' : `filters.${key}` as MessageKey);
   }
   function valueLabel(key: Facet, value: string, fallback = value) {
     if (key === 'community') return t(communityKey(value as Community));
@@ -91,7 +91,7 @@ function FilterForm({ view, options, shown, total }: { view: string; options: Fa
       {activeKeys.map(key => <button key={key} type="button" onClick={() => apply({ [key]: null })}
         aria-label={t('filters.remove', { name: label(key) })}
         className={buttonClass('quiet', 'min-h-11 h-auto max-w-full whitespace-normal break-words px-3 py-2')}>
-        <X size={16} className="shrink-0" aria-hidden />{label(key)}: {FACETS.includes(key as Facet) ? valueLabel(key as Facet, params.get(key)!) : params.get(key)}
+        <X size={16} className="shrink-0" aria-hidden />{label(key)}: <bdi>{FACETS.includes(key as Facet) ? valueLabel(key as Facet, params.get(key)!) : params.get(key)}</bdi>
       </button>)}
       <button type="button" className={buttonClass('quiet', 'min-h-11')} onClick={() => startTransition(() => router.push('/portal', { scroll: false }))}>{t('filters.clear')}</button>
     </div>}

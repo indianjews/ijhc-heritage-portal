@@ -3,7 +3,7 @@ import type { CorrectionChanges } from './public-input';
 import { cache } from 'react';
 import { facetOptions, hasPortalFilters, matchesFacets, searchWords, intersectIds, type FacetFilters, type FacetRow } from './portal-facets';
 import { reviewOrder } from './review-order';
-export { readDuplicates } from './duplicate-queries';
+export { findDuplicateHint, readDuplicates } from './duplicate-queries';
 export { readRetryState } from './retry-queries';
 import { emptyCommunityCounts } from '@/lib/communities';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -587,7 +587,7 @@ export async function readReviewCandidates(itemId: string): Promise<ReviewCandid
 const publicFacetRows = cache(async (): Promise<FacetRow[]> => {
   const db = await createServerSupabase();
   return await readPages((from, to) => db.from('items')
-    .select('id, created_at, reviewed_at, category, community, keywords, period, origin_place, language, item_fields(field_key,value), item_files(mime_type), item_families(families(id,name))')
+    .select('id, created_at, reviewed_at, category, community, keywords, period, origin_place, language, source, collector_name, item_fields(field_key,value), item_files(mime_type), item_families(families(id,name))')
     .eq('status', 'accepted').eq('access', 'public').not('category', 'is', null).is('deleted_at', null)
     .order('created_at', { ascending: false }).order('id').range(from, to)) as unknown as FacetRow[];
 });

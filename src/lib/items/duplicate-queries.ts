@@ -1,5 +1,25 @@
 import 'server-only';
 import { createServerSupabase } from '@/lib/supabase/server';
+import { createAdminSupabase } from '@/lib/supabase/admin';
+import { duplicateHint, type ChecksumMatch, type DuplicateHint } from '@/lib/files/duplicate-hint';
+
+/**
+ * Is a file with this SHA-256 already in the archive? For the contributor's
+ * upload screen, which has no account, so the lookup runs with the service
+ * role — and returns only what `duplicateHint` allows: a published record's
+ * id at most, never anything about an unpublished one.
+ */
+export async function findDuplicateHint(checksum: string): Promise<DuplicateHint> {
+  if (!/^[a-f0-9]{64}$/.test(checksum)) return null;
+  const { data, error } = await createAdminSupabase()
+    .from('item_files')
+    .select('item_id, items!inner(status, access, category, deleted_at)')
+    .eq('checksum', checksum)
+    .order('created_at', { ascending: true })
+    .range(0, 19);
+  if (error) throw error;
+  return duplicateHint((data ?? []) as unknown as ChecksumMatch[]);
+}
 
 export async function readDuplicates(itemId: string) {
   const db = await createServerSupabase();
