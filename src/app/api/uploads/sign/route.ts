@@ -7,7 +7,8 @@ import { buildStoragePath, isValidStorageKey } from '@/lib/files/paths';
 import { MAX_FILE_BYTES, validateFile } from '@/lib/files/validate';
 import { clientKey, rateLimit } from '@/lib/rate-limit';
 import { createAdminSupabase } from '@/lib/supabase/admin';
-import { findDuplicateHint } from '@/lib/items/queries';
+import { findOwnDuplicate } from '@/lib/items/queries';
+import { getCurrentProfile } from '@/lib/supabase/server';
 
 const Body = z.object({
   checksum: z.string().regex(/^[a-f0-9]{64}$/).optional(),
@@ -52,11 +53,13 @@ export async function POST(request: NextRequest) {
 
     if (error || !data) return fail(502, 'storage_unavailable', t('err.uploadNotStarted'));
 
-    // Already in the archive? Told to the contributor, never blocking. Only a
-    // published record is ever identified (see src/lib/files/duplicate-hint.ts);
-    // a lookup that fails costs the hint, not the upload.
-    const duplicate = parsed.data.checksum
-      ? await findDuplicateHint(parsed.data.checksum).catch((lookupError) => {
+    // "You already uploaded this": only against the signed-in user's own
+    // records, never anyone else's, and not at all for an anonymous upload
+    // (see src/lib/files/duplicate-hint.ts). Never blocking; a lookup that
+    // fails costs the hint, not the upload.
+    const uploader = parsed.data.checksum ? await getCurrentProfile().catch(() => null) : null;
+    const duplicate = uploader && parsed.data.checksum
+      ? await findOwnDuplicate(parsed.data.checksum, uploader.id).catch((lookupError) => {
         console.error('[uploads] duplicate lookup failed', lookupError);
         return null;
       })

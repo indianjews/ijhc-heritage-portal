@@ -3,7 +3,7 @@ import type { CorrectionChanges } from './public-input';
 import { cache } from 'react';
 import { facetOptions, hasPortalFilters, matchesFacets, searchWords, intersectIds, type FacetFilters, type FacetRow } from './portal-facets';
 import { reviewOrder } from './review-order';
-export { findDuplicateHint, readDuplicates } from './duplicate-queries';
+export { findOwnDuplicate, readDuplicates } from './duplicate-queries';
 export { readRetryState } from './retry-queries';
 import { emptyCommunityCounts } from '@/lib/communities';
 import { createServerSupabase } from '@/lib/supabase/server';

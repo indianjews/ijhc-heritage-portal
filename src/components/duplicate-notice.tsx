@@ -3,18 +3,27 @@
 import Link from 'next/link';
 import { Copy } from 'lucide-react';
 import { useMessages } from '@/lib/i18n/provider';
-import type { DuplicateHint } from '@/lib/files/duplicate-hint';
+import { batchDuplicates, earlierUploadHref, type DuplicateHint } from '@/lib/files/duplicate-hint';
 
 /**
- * "This file seems to be in the archive already" — for the contributor, on
- * the upload screen, and never in the way.
+ * "Uploaded twice?" — on /upload, about the person's own double uploads only,
+ * and never in the way.
  *
- * It does not block or warn in red: a second copy of a photograph often
- * arrives with the one thing the first lacked — a name, a date, a place. It
- * links only to a record that is published to everyone; a match on anything
- * else reads the same as a match on nothing published (duplicate-hint.ts).
+ * Two kinds (see src/lib/files/duplicate-hint.ts): the same file twice in this
+ * upload, or a file this signed-in user already sent in an earlier record.
+ * Someone else having sent the same file is never mentioned: a second copy
+ * from another person often brings the story the first lacked.
  */
-export function DuplicateNotice({ files }: { files: { fileName: string; duplicate?: DuplicateHint }[] }) {
+
+type Entry = { id?: string; fileName: string; checksum?: string | null; duplicate?: DuplicateHint };
+
+/** The server's "earlier" hint where there is one, else "batch" for a repeated file in this upload. */
+export function withBatchDuplicates<T extends { id: string; checksum?: string | null; duplicate?: DuplicateHint }>(files: T[]): T[] {
+  const repeated = batchDuplicates(files);
+  return files.map((file) => (file.duplicate || !repeated.has(file.id) ? file : { ...file, duplicate: { kind: 'batch' } }));
+}
+
+export function DuplicateNotice({ files }: { files: Entry[] }) {
   const t = useMessages();
   const matches = files.filter((file) => file.duplicate);
   if (!matches.length) return null;
@@ -24,23 +33,23 @@ export function DuplicateNotice({ files }: { files: { fileName: string; duplicat
         <Copy size={16} aria-hidden /> {t('upload.duplicate.heading')}
       </h3>
       <ul className="mt-2 space-y-1.5">
-        {matches.map((file) => (
-          <li key={file.fileName} className="leading-relaxed">
-            {t('upload.duplicate.file', { name: '⁨' + file.fileName + '⁩' })}
-            {file.duplicate?.publishedId && (
-              <>
-                {' '}
-                <Link
-                  href={`/portal/${file.duplicate.publishedId}`}
-                  target="_blank"
-                  className="inline-flex min-h-11 items-center underline underline-offset-2"
-                >
-                  {t('upload.duplicate.view')}
-                </Link>
-              </>
-            )}
-          </li>
-        ))}
+        {matches.map((file, index) => {
+          const name = '⁨' + file.fileName + '⁩';
+          const hint = file.duplicate!;
+          return (
+            <li key={file.id ?? `${file.fileName}-${index}`} className="leading-relaxed">
+              {hint.kind === 'batch' ? t('upload.duplicate.batch', { name }) : t('upload.duplicate.earlier', { name })}
+              {hint.kind === 'earlier' && (
+                <>
+                  {' '}
+                  <Link href={earlierUploadHref(hint)} target="_blank" className="inline-flex min-h-11 items-center underline underline-offset-2">
+                    {t('upload.duplicate.view')}
+                  </Link>
+                </>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <p className="mt-2 text-sm text-muted">{t('upload.duplicate.proceed')}</p>
     </section>

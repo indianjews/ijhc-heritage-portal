@@ -7,7 +7,7 @@ import he from '@/lib/i18n/locales/he.json';
 import { MessagesProvider } from '@/lib/i18n/provider';
 import { creditSegments, creditText } from '@/lib/files/credit-text';
 import { facetOptions, hasPortalFilters, matchesFacets, matchesPerson, personHref, personKey, type FacetRow } from '@/lib/items/portal-facets';
-import { duplicateHint, type ChecksumMatch } from '@/lib/files/duplicate-hint';
+import { batchDuplicates, earlierUploadHint, type ChecksumMatch } from '@/lib/files/duplicate-hint';
 
 /**
  * Three of the four polish items: the rights notice (#7), linked contributor
@@ -21,10 +21,14 @@ const hebrew = (key: MessageKey, vars?: Record<string, string | number>) => form
 // ── shared mocks for the record page and the sign route ────────────────────
 const record = vi.hoisted(() => ({
   item: {} as Record<string, unknown>,
-  admin: { rows: [] as unknown[], signed: { path: 'uploads/2026/11/x-a.jpg', token: 'tok' } },
-  checksums: [] as string[],
+  /** Every item_files row holding the bytes, whoever uploaded them; the fake applies the query's filters. */
+  admin: { rows: [] as unknown[], signed: { path: 'uploads/2026/11/x-a.jpg', token: 'tok' }, ignoreUploaderFilter: false },
+  filters: [] as [string, unknown][],
+  queried: 0,
+  /** The signed-in profile for the sign route, or null for an anonymous upload. */
+  session: null as null | { id: string; role: string },
 }));
-vi.mock('@/lib/supabase/server', () => ({ getCurrentVolunteer: async () => null }));
+vi.mock('@/lib/supabase/server', () => ({ getCurrentVolunteer: async () => null, getCurrentProfile: async () => record.session }));
 vi.mock('@/lib/items/public-tokens', () => ({ publicToken: () => 'test-token' }));
 vi.mock('@/components/record-feedback', () => ({ RecordFeedback: () => null }));
 vi.mock('@/components/record-edit-link', () => ({ RecordEditLink: () => null }));
@@ -38,11 +42,20 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminSupabase: () => ({
     storage: { from: () => ({ createSignedUploadUrl: async () => ({ data: record.admin.signed, error: null }) }) },
     from: () => {
+      record.queried += 1;
+      const filters: [string, unknown][] = [];
       const chain = {
         select: () => chain,
-        eq: (_c: string, value: string) => { record.checksums.push(value); return chain; },
+        eq: (column: string, value: unknown) => { filters.push([column, value]); record.filters.push([column, value]); return chain; },
+        is: () => chain,
         order: () => chain,
-        range: async () => ({ data: record.admin.rows, error: null }),
+        range: async () => {
+          const checksum = filters.find(([c]) => c === 'checksum')?.[1];
+          const uploader = filters.find(([c]) => c === 'items.uploaded_by')?.[1];
+          const rows = (record.admin.rows as (ChecksumMatch & { checksum: string })[]).filter((r) =>
+            r.checksum === checksum && (record.admin.ignoreUploaderFilter || r.items?.uploaded_by === uploader));
+          return { data: rows, error: null };
+        },
       };
       return chain;
     },
@@ -52,7 +65,7 @@ vi.mock('@/lib/items/queries', async () => {
   const duplicates = await vi.importActual<typeof import('@/lib/items/duplicate-queries')>('@/lib/items/duplicate-queries');
   const { facetOptions: options } = await import('@/lib/items/portal-facets');
   return {
-    findDuplicateHint: duplicates.findDuplicateHint,
+    findOwnDuplicate: duplicates.findOwnDuplicate,
     readRecordComments: async () => [], readRecordCorrections: async () => [], readApproverName: async () => null,
     getPublishedItem: async () => record.item, getRelatedValueCounts: async () => options([]), getKeywordLabels: async () => ({}),
   };
@@ -61,8 +74,8 @@ vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'test-service-role-key-for-grants');
 
 const { default: RecordPage } = await import('@/app/portal/[id]/page');
 const { POST: sign } = await import('@/app/api/uploads/sign/route');
-const { DuplicateNotice } = await import('@/components/duplicate-notice');
-const { findDuplicateHint } = await import('@/lib/items/duplicate-queries');
+const { DuplicateNotice, withBatchDuplicates } = await import('@/components/duplicate-notice');
+const { findOwnDuplicate } = await import('@/lib/items/duplicate-queries');
 
 const baseItem = {
   id: 'rec-1', title: 'Purim', description: null, category: 'documents', community: null, period: null, origin_place: null,
@@ -155,68 +168,90 @@ describe('#13 contributor and collector names link to their published items', ()
 });
 
 // ── #17 duplicate notice ───────────────────────────────────────────────────
-describe('#17 contributors are told about a duplicate file, without leaking unpublished records', () => {
-  const match = (item_id: string, status: string, over: Partial<NonNullable<ChecksumMatch['items']>> = {}): ChecksumMatch =>
-    ({ item_id, items: { status, access: 'public', category: 'documents', deleted_at: null, ...over } });
+describe('#17 a contributor is warned only about their own double uploads', () => {
+  const ME = 'expert-me';
+  const OTHER = 'expert-other';
+  const checksum = 'a'.repeat(64);
+  const row = (item_id: string, uploaded_by: string | null, status = 'accepted', over: Partial<NonNullable<ChecksumMatch['items']>> = {}) =>
+    ({ item_id, checksum, items: { uploaded_by, status, access: 'public', category: 'documents', deleted_at: null, ...over } });
 
-  it('identifies only a record published to everyone', () => {
-    expect(duplicateHint([])).toBeNull();
-    expect(duplicateHint([match('pub', 'accepted')])).toEqual({ publishedId: 'pub' });
-    expect(duplicateHint([match('p', 'pending'), match('pub', 'accepted')])).toEqual({ publishedId: 'pub' });
+  beforeEach(() => {
+    record.filters = []; record.queried = 0; record.session = null; record.admin.ignoreUploaderFilter = false; record.admin.rows = [];
   });
 
-  it.each([
-    ['pending', match('secret', 'pending')],
-    ['rejected', match('secret', 'rejected')],
-    ['shadow gallery', match('secret', 'shadow_gallery')],
-    ['restricted', match('secret', 'accepted', { access: 'research' })],
-    ['uncatalogued', match('secret', 'accepted', { category: null })],
-  ])('says only "exists" for a %s match, never its id', (_label, row) => {
-    const hint = duplicateHint([row]);
-    expect(hint).toEqual({ publishedId: null });
-    expect(JSON.stringify(hint)).not.toContain('secret');
-  });
+  describe('the rule (pure)', () => {
+    it('finds the uploader’s own earlier record, preferring a published one', () => {
+      expect(earlierUploadHint([row('mine', ME, 'pending'), row('mine-pub', ME)], ME)).toEqual({ kind: 'earlier', itemId: 'mine-pub', published: true });
+      expect(earlierUploadHint([row('mine', ME, 'pending')], ME)).toEqual({ kind: 'earlier', itemId: 'mine', published: false });
+    });
 
-  it('ignores records in the bin', () => {
-    expect(duplicateHint([match('binned', 'accepted', { deleted_at: '2026-11-01' })])).toBeNull();
-  });
+    it('never reports someone else’s record, even if a query returned it', () => {
+      expect(earlierUploadHint([row('theirs', OTHER)], ME)).toBeNull();
+      expect(earlierUploadHint([row('anon', null)], ME)).toBeNull();
+      expect(earlierUploadHint([row('theirs', OTHER), row('mine', ME, 'pending')], ME)).toEqual({ kind: 'earlier', itemId: 'mine', published: false });
+    });
 
-  it('only looks up a well-formed SHA-256', async () => {
-    record.checksums = [];
-    expect(await findDuplicateHint('not-a-hash')).toBeNull();
-    expect(record.checksums).toEqual([]);
+    it('has nothing to say without an uploader, or about a binned record', () => {
+      expect(earlierUploadHint([row('mine', ME)], null)).toBeNull();
+      expect(earlierUploadHint([row('mine', ME, 'accepted', { deleted_at: '2026-11-01' })], ME)).toBeNull();
+    });
+
+    it('flags the second and later copies of the same bytes in one upload', () => {
+      const files = [{ id: 'a', checksum: 'x' }, { id: 'b', checksum: 'y' }, { id: 'c', checksum: 'x' }, { id: 'd', checksum: 'x' }, { id: 'e', checksum: null }, { id: 'f' }];
+      expect([...batchDuplicates(files)]).toEqual(['c', 'd']);
+    });
   });
 
   describe('POST /api/uploads/sign', () => {
-    const checksum = 'a'.repeat(64);
-    const post = (body: Record<string, unknown>) => sign(new NextRequest('https://archive.example/api/uploads/sign', {
-      method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': `10.1.0.${Math.floor(Math.random() * 250)}` },
-      body: JSON.stringify(body),
-    }));
-    beforeEach(() => { record.checksums = []; });
+    const post = (body: Record<string, unknown> = { fileName: 'a.jpg', mimeType: 'image/jpeg', byteSize: 100, checksum }) =>
+      sign(new NextRequest('https://archive.example/api/uploads/sign', {
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-forwarded-for': `10.1.0.${Math.floor(Math.random() * 250)}` },
+        body: JSON.stringify(body),
+      }));
 
-    it('still signs the upload, and adds the hint — non-blocking', async () => {
-      record.admin.rows = [match('pub', 'accepted')];
-      const response = await post({ fileName: 'a.jpg', mimeType: 'image/jpeg', byteSize: 100, checksum });
+    it('warns a signed-in user re-uploading their own file, and still signs the upload', async () => {
+      record.session = { id: ME, role: 'volunteer' };
+      record.admin.rows = [row('mine', ME, 'pending')];
+      const response = await post();
       expect(response.status).toBe(200);
       const { data } = await response.json();
-      expect(data).toMatchObject({ path: 'uploads/2026/11/x-a.jpg', token: 'tok', duplicate: { publishedId: 'pub' } });
-      expect(record.checksums).toEqual([checksum]);
+      expect(data).toMatchObject({ path: 'uploads/2026/11/x-a.jpg', token: 'tok', duplicate: { kind: 'earlier', itemId: 'mine', published: false } });
+      // The query itself is scoped to the uploader.
+      expect(record.filters).toContainEqual(['items.uploaded_by', ME]);
     });
 
-    it('returns nothing identifying for an unpublished match', async () => {
-      record.admin.rows = [match('pending-record-id', 'pending')];
-      const response = await post({ fileName: 'a.jpg', mimeType: 'image/jpeg', byteSize: 100, checksum });
-      const text = await response.text();
-      expect(JSON.parse(text).data.duplicate).toEqual({ publishedId: null });
-      expect(text).not.toContain('pending-record-id');
-      expect(text).not.toContain('pending');
+    it('says nothing to a signed-in user when only someone else uploaded the file', async () => {
+      record.session = { id: ME, role: 'volunteer' };
+      record.admin.rows = [row('theirs', OTHER), row('theirs-pending', OTHER, 'pending')];
+      const text = await (await post()).text();
+      expect(JSON.parse(text).data.duplicate).toBeNull();
+      expect(text).not.toContain('theirs');
     });
 
-    it('returns null when nothing matches, or when no checksum was sent', async () => {
-      record.admin.rows = [];
-      expect((await (await post({ fileName: 'a.jpg', mimeType: 'image/jpeg', byteSize: 100, checksum })).json()).data.duplicate).toBeNull();
+    it('still says nothing if a broken query returned someone else’s rows', async () => {
+      record.session = { id: ME, role: 'volunteer' };
+      record.admin.ignoreUploaderFilter = true;
+      record.admin.rows = [row('theirs', OTHER)];
+      expect((await (await post()).json()).data.duplicate).toBeNull();
+    });
+
+    it('never queries the archive for an anonymous upload, even when the file is held', async () => {
+      record.admin.rows = [row('theirs', OTHER), row('anon', null)];
+      const { data } = await (await post()).json();
+      expect(data.duplicate).toBeNull();
+      expect(record.queried).toBe(0);
+    });
+
+    it('does not look anything up without a checksum', async () => {
+      record.session = { id: ME, role: 'volunteer' };
       expect((await (await post({ fileName: 'a.jpg', mimeType: 'image/jpeg', byteSize: 100 })).json()).data.duplicate).toBeNull();
+      expect(record.queried).toBe(0);
+    });
+
+    it('only looks up a well-formed SHA-256', async () => {
+      expect(await findOwnDuplicate('not-a-hash', ME)).toBeNull();
+      expect(await findOwnDuplicate(checksum, null)).toBeNull();
+      expect(record.queried).toBe(0);
     });
   });
 
@@ -225,24 +260,43 @@ describe('#17 contributors are told about a duplicate file, without leaking unpu
       <MessagesProvider catalogue={{ ...en, ...HE }}><div dir="rtl"><DuplicateNotice files={files} /></div></MessagesProvider>,
     );
 
-    it('says nothing when there is no duplicate', () => {
-      const { container } = renderNotice([{ fileName: 'a.jpg', duplicate: null }, { fileName: 'b.jpg' }]);
+    it('says nothing when nothing was uploaded twice', () => {
+      const { container } = renderNotice(withBatchDuplicates([{ id: 'a', fileName: 'a.jpg', checksum: 'x' }, { id: 'b', fileName: 'b.jpg', checksum: 'y' }]));
       expect(container.querySelector('section')).toBeNull();
     });
 
-    it('names the file, links a published match, and says the contributor may still send it', () => {
-      renderNotice([{ fileName: 'ketuba.jpg', duplicate: { publishedId: 'pub' } }]);
+    it('flags the same file added twice in one upload, on the second copy', () => {
+      renderNotice(withBatchDuplicates([{ id: 'a', fileName: 'ketuba.jpg', checksum: 'x' }, { id: 'b', fileName: 'ketuba (1).jpg', checksum: 'x' }]));
       expect(screen.getByRole('status')).toHaveTextContent(HE['upload.duplicate.heading']);
-      expect(screen.getByText(/ketuba\.jpg/)).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: HE['upload.duplicate.view'] })).toHaveAttribute('href', '/portal/pub');
-      expect(screen.getByText(HE['upload.duplicate.proceed'])).toBeInTheDocument();
-      expect(screen.queryByRole('button')).toBeNull(); // nothing to dismiss or confirm: it never blocks
+      expect(screen.getByText(/ketuba \(1\)\.jpg/)).toHaveTextContent(HE['upload.duplicate.batch'].replace('{name}', '').trim());
+      expect(screen.queryByText(/^⁨ketuba\.jpg/)).toBeNull();
+      expect(screen.queryByRole('link')).toBeNull();
+      expect(screen.queryByRole('button')).toBeNull(); // never blocks
     });
 
-    it('offers no link for an unpublished match', () => {
-      renderNotice([{ fileName: 'scan.jpg', duplicate: { publishedId: null } }]);
-      expect(screen.getByText(/scan\.jpg/)).toBeInTheDocument();
-      expect(screen.queryByRole('link')).toBeNull();
+    it('says "you already uploaded this" and links the earlier record — public page or review page', () => {
+      renderNotice([
+        { id: 'a', fileName: 'scan.jpg', duplicate: { kind: 'earlier', itemId: 'pub', published: true } },
+        { id: 'b', fileName: 'flyer.jpg', duplicate: { kind: 'earlier', itemId: 'queued', published: false } },
+      ]);
+      expect(screen.getByText(/scan\.jpg/)).toHaveTextContent(HE['upload.duplicate.earlier'].replace('{name}', '').trim());
+      expect(screen.getAllByRole('link', { name: HE['upload.duplicate.view'] }).map((a) => a.getAttribute('href'))).toEqual(['/portal/pub', '/review/queued']);
+      expect(screen.getByText(HE['upload.duplicate.proceed'])).toBeInTheDocument();
+    });
+
+    it('keeps the server’s "earlier" hint over a batch repeat', () => {
+      const files = withBatchDuplicates([
+        { id: 'a', fileName: 'a.jpg', checksum: 'x' },
+        { id: 'b', fileName: 'a.jpg', checksum: 'x', duplicate: { kind: 'earlier', itemId: 'mine', published: true } },
+      ]);
+      expect(files.map((f) => f.duplicate)).toEqual([undefined, { kind: 'earlier', itemId: 'mine', published: true }]);
+    });
+
+    it('no longer says anything about the archive holding the file', () => {
+      for (const catalogue of [en as Record<string, string>, HE]) {
+        const text = Object.entries(catalogue).filter(([key]) => key.startsWith('upload.duplicate.')).map(([, v]) => v).join(' ');
+        expect(text).not.toMatch(/already holds|already in the archive|כבר נמצא בארכיון/);
+      }
     });
   });
 });

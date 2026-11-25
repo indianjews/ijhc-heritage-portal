@@ -1311,11 +1311,12 @@ export const en = {
   'bulk.err.upload': "A file could not be uploaded. Check the connection and send this item again.",
   'bulk.err.failed': "This item could not be saved. Send it again.",
   'bulk.err.migration': "Bulk upload is not available yet: the database update it needs (migration 0041) has not been applied.",
-  // Duplicate file notice on /upload (from /api/uploads/sign).
-  'upload.duplicate.heading': "This may already be in the archive",
-  'upload.duplicate.file': "{name} is identical to a file the archive already holds.",
-  'upload.duplicate.view': "See the published record",
-  'upload.duplicate.proceed': "You can still send it — especially if you know something about it that may be missing: a name, a date, a place.",
+  // "Uploaded twice?" on /upload: the uploader's own duplicates only (duplicate-hint.ts).
+  'upload.duplicate.heading': "Uploaded twice?",
+  'upload.duplicate.earlier': "{name} is identical to a file you already uploaded.",
+  'upload.duplicate.batch': "{name} appears more than once in this upload.",
+  'upload.duplicate.view': "See your earlier upload",
+  'upload.duplicate.proceed': "If that was a mistake, go back and remove the extra copy. If not, carry on — nothing is blocked.",
 } as const;
 
 export type MessageKey = keyof typeof en;

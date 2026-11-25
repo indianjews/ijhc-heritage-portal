@@ -152,7 +152,7 @@ Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומח�
 
 | Path | What it does | Guard |
 |---|---|---|
-| `POST /api/uploads/sign` | signed upload URL into the private `heritage` bucket; with the browser's SHA-256 also a non-blocking `duplicate` hint for /upload — `{ publishedId }` only for a record published to everyone, `{ publishedId: null }` for any other match (`src/lib/files/duplicate-hint.ts`) | public, validated, size/type limited |
+| `POST /api/uploads/sign` | signed upload URL into the private `heritage` bucket; for a **signed-in** uploader, also a non-blocking "you already uploaded this" hint, matched by SHA-256 against their **own** records only (`items.uploaded_by`); anonymous uploads are never checked against the archive, and nobody is told someone else sent the same file (archival decision 25.11.2026: a second copy brings new context). Same-file-twice-in-one-upload is found in the browser. Experts' archive-wide duplicates in /review are unchanged (`src/lib/files/duplicate-hint.ts`) | public, validated, size/type limited |
 | `POST /api/analyze` | Gemini reading (counts against the daily quota) | public, rate limited |
 | `POST /api/items` | creates an item: forces `pending`, stores checksums, flags duplicates, records contributor tag proposals, sets `uploaded_by` for signed-in experts | public, Zod |
 | `POST /api/items/[id]/review` / `POST /api/items/bulk-review` | the decision (same handler); publishing needs a category | expert; accepted records need the 0036 rule |

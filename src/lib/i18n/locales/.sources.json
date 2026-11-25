@@ -1065,10 +1065,11 @@
     "bulk.err.upload": "efd0d4790b16346f",
     "bulk.err.failed": "045bb8517c456970",
     "bulk.err.migration": "6ca02aa58fd96909",
-    "upload.duplicate.heading": "df0e90534e957d2c",
-    "upload.duplicate.file": "afb1a703964c9caa",
-    "upload.duplicate.view": "088fbc542d7171c2",
-    "upload.duplicate.proceed": "b88ea1dfc17931e0"
+    "upload.duplicate.heading": "84127ed7ebee2045",
+    "upload.duplicate.earlier": "6561aacb26c37633",
+    "upload.duplicate.batch": "1f08a873e3b1b883",
+    "upload.duplicate.view": "b4864a1b6d1a86d2",
+    "upload.duplicate.proceed": "79062b446529dbf5"
   },
   "hi": {
     "site.name": "e5dadf70da927c9f",

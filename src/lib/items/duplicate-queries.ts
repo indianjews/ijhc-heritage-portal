@@ -1,24 +1,26 @@
 import 'server-only';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { createAdminSupabase } from '@/lib/supabase/admin';
-import { duplicateHint, type ChecksumMatch, type DuplicateHint } from '@/lib/files/duplicate-hint';
+import { earlierUploadHint, type ChecksumMatch, type DuplicateHint } from '@/lib/files/duplicate-hint';
 
 /**
- * Is a file with this SHA-256 already in the archive? For the contributor's
- * upload screen, which has no account, so the lookup runs with the service
- * role — and returns only what `duplicateHint` allows: a published record's
- * id at most, never anything about an unpublished one.
+ * Has this signed-in user already uploaded a file with these bytes? Only
+ * their own records are searched (`items.uploaded_by`); nobody else's upload
+ * is ever reported (see src/lib/files/duplicate-hint.ts). Without an uploader
+ * id there is no query at all.
  */
-export async function findDuplicateHint(checksum: string): Promise<DuplicateHint> {
-  if (!/^[a-f0-9]{64}$/.test(checksum)) return null;
+export async function findOwnDuplicate(checksum: string, uploaderId: string | null | undefined): Promise<DuplicateHint> {
+  if (!uploaderId || !/^[a-f0-9]{64}$/.test(checksum)) return null;
   const { data, error } = await createAdminSupabase()
     .from('item_files')
-    .select('item_id, items!inner(status, access, category, deleted_at)')
+    .select('item_id, items!inner(uploaded_by, status, access, category, deleted_at)')
     .eq('checksum', checksum)
+    .eq('items.uploaded_by', uploaderId)
+    .is('items.deleted_at', null)
     .order('created_at', { ascending: true })
     .range(0, 19);
   if (error) throw error;
-  return duplicateHint((data ?? []) as unknown as ChecksumMatch[]);
+  return earlierUploadHint((data ?? []) as unknown as ChecksumMatch[], uploaderId);
 }
 
 export async function readDuplicates(itemId: string) {

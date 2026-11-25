@@ -1064,8 +1064,9 @@
   "bulk.err.upload": "לא ניתן היה להעלות קובץ. כדאי לבדוק את החיבור ולשלוח את הפריט שוב.",
   "bulk.err.failed": "לא ניתן היה לשמור את הפריט. יש לשלוח אותו שוב.",
   "bulk.err.migration": "ההעלאה המרוכזת עוד לא זמינה: עדכון מסד הנתונים שהיא צריכה (מיגרציה 0041) עוד לא הוחל.",
-  "upload.duplicate.heading": "ייתכן שזה כבר נמצא בארכיון",
-  "upload.duplicate.file": "{name} זהה לקובץ שכבר נמצא בארכיון.",
-  "upload.duplicate.view": "לרשומה שפורסמה",
-  "upload.duplicate.proceed": "אפשר בכל זאת לשלוח אותו, במיוחד אם ידוע לך עליו משהו שאולי חסר: שם, תאריך או מקום."
+  "upload.duplicate.heading": "הועלה פעמיים?",
+  "upload.duplicate.earlier": "{name} זהה לקובץ שכבר העלית.",
+  "upload.duplicate.batch": "{name} מופיע יותר מפעם אחת בהעלאה הזו.",
+  "upload.duplicate.view": "להעלאה הקודמת",
+  "upload.duplicate.proceed": "אם זו טעות, אפשר לחזור ולהסיר את העותק המיותר. אם לא, אפשר להמשיך כרגיל — שום דבר לא נחסם."
 }
