@@ -206,6 +206,7 @@ export const en = {
   'nav.portal': 'Explore',
   'nav.contribute': 'Add to the archive now',
   'nav.addRecording': 'Add a recording',
+  'nav.bulkUpload': 'Bulk upload',
   'nav.review': 'Review',
   'nav.manage': 'Manage',
   'nav.signIn': 'Sign in',

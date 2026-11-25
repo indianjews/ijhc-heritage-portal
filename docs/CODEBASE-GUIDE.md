@@ -68,7 +68,8 @@ src/app/                      pages and API routes (App Router)
   review/bulk-upload/         experts' bulk upload (component: bulk-upload-flow.tsx): many items, each with
                               media (allow-listed images, PDFs, videos and/or a YouTube link), notes, required dating or
                               "Date unknown", required copyright yes/no; sent one item per request; the
-                              AI reading is queued (0041), never run while the expert waits
+                              AI reading is queued (0041), never run while the expert waits; linked
+                              from /review and from the Archive menu (site-nav.tsx, experts/admins only)
   review/corrections/         public corrections awaiting a decision (from → to diff)
   manage/                     admin: accounts, bin, families, vocabulary, problems
   login/, login/forgot, login/reset   sign-in, account request, password reset

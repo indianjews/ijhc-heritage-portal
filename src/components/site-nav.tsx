@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Trash2,
   FolderPlus,
+  Upload,
   UserPlus,
   Users,
   Video,
@@ -137,6 +138,18 @@ export function AccountNav({ profile, layout }: { profile: Profile | null; layou
   );
 }
 
+/**
+ * Whether an archive link is the page being shown.
+ *
+ * By prefix, so /review/<id> keeps "Review" lit — except where a sub-path has
+ * a link of its own: on /review/bulk-upload only "Bulk upload" is lit.
+ */
+const OWN_LINK_SUBPATHS = ['/review/bulk-upload'];
+export function archiveLinkCurrent(href: string, pathname: string): boolean {
+  if (!(pathname === href || pathname.startsWith(href + '/'))) return false;
+  return !OWN_LINK_SUBPATHS.some((sub) => sub !== href && sub.startsWith(href + '/') && (pathname === sub || pathname.startsWith(sub + '/')));
+}
+
 export function ArchiveNav({ profile, queueCount, layout }: NavProps & { layout: Layout }) {
   const t = useMessages();
   const pathname = usePathname();
@@ -146,6 +159,7 @@ export function ArchiveNav({ profile, queueCount, layout }: NavProps & { layout:
 
   const links = [
     { href: '/review', label: t('nav.review'), icon: ClipboardCheck, count: queueCount },
+    { href: '/review/bulk-upload', label: t('nav.bulkUpload'), icon: Upload },
     { href: '/upload/recording', label: t('nav.addRecording'), icon: Video },
     { href: '/manage/vocabulary', label: t('nav.keywords'), icon: BookMarked },
     { href: '/manage/families', label: t('nav.families'), icon: Users },
@@ -164,7 +178,7 @@ export function ArchiveNav({ profile, queueCount, layout }: NavProps & { layout:
     >
       <span className={layout === 'bar' ? 'eyebrow me-2' : 'eyebrow px-4 pb-1 pt-2'}>{t('nav.archive')}</span>
       {links.map(({ href, label, icon: Icon, count }) => {
-        const current = pathname.startsWith(href);
+        const current = archiveLinkCurrent(href, pathname);
         return (
           <Link
             key={href}
