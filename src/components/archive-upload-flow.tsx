@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, CheckCircle2, FileText, FolderUp, Loader2, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { buttonClass } from '@/components/primitives';
+import { Dropzone } from '@/components/dropzone';
 import { useMessages } from '@/lib/i18n/provider';
 import type { MessageKey } from '@/lib/i18n/messages';
 import { uploadSignBody } from '@/lib/files/hash';
@@ -12,6 +13,7 @@ import { measureDuration } from '@/lib/files/measure';
 import { validateFile } from '@/lib/files/validate';
 import { cardErrors, isVideo, type CardErrorKey, type CardField } from '@/lib/items/bulk-upload';
 import { MAX_SIDECAR_CHARS, groupArchiveFiles, mediaType, sidecarText, type ArchiveGroup } from '@/lib/upload/archive-pairing';
+import type { DroppedFile } from '@/lib/upload/drop';
 import { cn } from '@/lib/utils';
 
 /**
@@ -76,10 +78,17 @@ export function ArchiveUploadFlow({ consentVersion, expert }: { consentVersion: 
     return () => window.removeEventListener('beforeunload', warn);
   }, [unsent, running]);
 
-  function add(list: FileList | null) {
-    const files = Array.from(list ?? []).map((file) => ({
-      id: crypto.randomUUID(), file, name: file.name, type: file.type,
-      relativePath: (file as File & { webkitRelativePath?: string }).webkitRelativePath || undefined,
+  /** From a picker: a folder pick carries each file's path in webkitRelativePath. */
+  function pickedFrom(list: FileList | null): DroppedFile[] {
+    return Array.from(list ?? []).map((file) => ({
+      file, relativePath: (file as File & { webkitRelativePath?: string }).webkitRelativePath || undefined,
+    }));
+  }
+
+  /** The one way in, for the buttons and for a drop alike. */
+  function add(dropped: DroppedFile[]) {
+    const files = dropped.map(({ file, relativePath }) => ({
+      id: crypto.randomUUID(), file, name: file.name, type: file.type, relativePath,
     }));
     if (files.length) setPicked((previous) => [...previous, ...files]);
   }
@@ -161,23 +170,23 @@ export function ArchiveUploadFlow({ consentVersion, expert }: { consentVersion: 
       <section aria-labelledby={`${id}-files`} className="space-y-4">
         <h2 id={`${id}-files`} className="font-display text-2xl">{t('archive.files')}</h2>
         <p className="text-muted">{t('archive.filesHint')}</p>
-        <div className="flex flex-wrap gap-3">
+        <Dropzone prompt={t('archive.dropPrompt')} onFiles={add} folders disabled={running}>
           <label className={buttonClass('primary', 'cursor-pointer')}>
             <FolderUp size={18} aria-hidden /> {t('archive.chooseFolder')}
             <input ref={folderInput} type="file" multiple className="sr-only" disabled={running}
-              onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
+              onChange={(e) => { add(pickedFrom(e.target.files)); e.target.value = ''; }} />
           </label>
           <label className={buttonClass('quiet', 'cursor-pointer')}>
             <Plus size={18} aria-hidden /> {t('archive.chooseFiles')}
             <input type="file" multiple className="sr-only" disabled={running}
-              onChange={(e) => { add(e.target.files); e.target.value = ''; }} />
+              onChange={(e) => { add(pickedFrom(e.target.files)); e.target.value = ''; }} />
           </label>
           {picked.length > 0 && !running && (
             <button type="button" className={buttonClass('quiet')} onClick={() => { setPicked([]); setOutcomes({}); uploads.current.clear(); }}>
               <Trash2 size={18} aria-hidden /> {t('archive.clear')}
             </button>
           )}
-        </div>
+        </Dropzone>
 
         {grouping.items.length > 0 && (
           <div>

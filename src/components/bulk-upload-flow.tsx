@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Loader2, Plus, Trash2, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Dropzone } from '@/components/dropzone';
 import { buttonClass } from '@/components/primitives';
 import { useMessages } from '@/lib/i18n/provider';
 import type { MessageKey } from '@/lib/i18n/messages';
@@ -336,6 +337,11 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
   function pick(event: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(event.target.files ?? []);
     event.target.value = '';
+    addFiles(picked);
+  }
+
+  /** The one way in, for the button and for a drop alike: the same allow-list, size check and message. */
+  function addFiles(picked: File[]) {
     const refused = picked.find((file) => !bulkFileAccepted(file.type) || validateFile({ mimeType: file.type, byteSize: file.size }));
     if (refused) {
       const rejection = validateFile({ mimeType: refused.type, byteSize: refused.size });
@@ -393,10 +399,12 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
         <fieldset className="space-y-3" disabled={disabled} aria-describedby={shown('media') ? `${id}-media-error` : undefined}>
           <legend className="font-medium">{t('bulk.media')} <span className="text-critical">*</span></legend>
           <p className="text-sm text-muted">{t('bulk.mediaHint')}</p>
-          <label className={buttonClass('quiet', 'cursor-pointer')}>
-            <Plus size={18} aria-hidden /> {t('bulk.chooseFiles')}
-            <input type="file" multiple accept={BULK_ACCEPT} className="sr-only" onChange={pick} />
-          </label>
+          <Dropzone prompt={t('bulk.dropPrompt')} disabled={disabled} onFiles={(dropped) => addFiles(dropped.map((d) => d.file))}>
+            <label className={buttonClass('quiet', 'cursor-pointer')}>
+              <Plus size={18} aria-hidden /> {t('bulk.chooseFiles')}
+              <input type="file" multiple accept={BULK_ACCEPT} className="sr-only" onChange={pick} />
+            </label>
+          </Dropzone>
           {card.fileError && <p role="alert" className="text-sm text-critical">{card.fileError}</p>}
           {card.files.length > 0 && (
             <ul className="space-y-2">
