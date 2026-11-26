@@ -145,6 +145,7 @@ export function LinkInput({
         <input
           type="url"
           inputMode="url"
+          aria-label={t('link.address')}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => {
@@ -154,7 +155,7 @@ export function LinkInput({
             }
           }}
           disabled={disabled || busy}
-          className="h-11 w-full rounded-lg border border-rule bg-paper px-4 sm:flex-1 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+          className="h-11 w-full rounded-lg border border-control bg-paper px-4 sm:flex-1 focus:border-accent-strong focus:bg-accent-wash/30"
         />
         <button
           type="button"

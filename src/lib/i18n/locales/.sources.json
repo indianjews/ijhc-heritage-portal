@@ -4,7 +4,7 @@
     "site.short": "f1b65289473c662f",
     "site.home": "4edb1edd00a3667e",
     "site.description": "9ee23b30d9242d4e",
-    "site.skipToContent": "ac576a66d4563e60",
+    "site.skipToContent": "c887f134c26ea831",
     "nav.menu": "398991009da1d251",
     "nav.openMenu": "fc798c613b9954de",
     "nav.closeMenu": "d992820f3cd258c9",
@@ -653,7 +653,7 @@
     "legal.contactHeading": "a06a894da119bd11",
     "nav.privacy": "54a57c3147c49f33",
     "nav.terms": "8c45a486e4b1cad8",
-    "nav.accessibility": "d3368cbffe23c98d",
+    "nav.accessibility": "340eb8c07faeca3d",
     "stats.heading": "b6d60727ef95ff4a",
     "stats.body": "697e74518d72d1c8",
     "stats.accept": "e213c161d5cefa52",
@@ -1096,7 +1096,11 @@
     "review3.filterTextHint": "31b729bc81c0417c",
     "review3.filterUncategorised": "e8d5d62575706d32",
     "review3.filterShowing": "f3d25c9265aac7c1",
-    "review3.filterNone": "124b80c2d108052a"
+    "review3.filterNone": "124b80c2d108052a",
+    "login.mode": "6c88d54a2da39f76",
+    "link.address": "4b8adc5f1bf669ea",
+    "vocab.mergeTarget": "7affb5887114bf58",
+    "review.staleInLanguage": "2a9d34efa1cc0fe0"
   },
   "hi": {
     "site.name": "e5dadf70da927c9f",

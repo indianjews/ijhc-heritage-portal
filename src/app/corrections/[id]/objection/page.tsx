@@ -11,8 +11,8 @@ export default async function ObjectionPage({ params, searchParams }: {
   const { t: token } = await searchParams;
   const { t } = await getMessages();
   const valid = z.uuid().safeParse(id).success && typeof token === 'string' && verifyPublicToken('objection', id, token);
-  return <main className="mx-auto max-w-2xl px-6 py-10">
+  return <div className="mx-auto max-w-2xl px-6 py-10">
     <h1 className="font-display text-3xl">{t('public.object')}</h1>
     {valid ? <CorrectionObjection id={id} token={token!} /> : <p className="mt-6">{t('public.expired')}</p>}
-  </main>;
+  </div>;
 }

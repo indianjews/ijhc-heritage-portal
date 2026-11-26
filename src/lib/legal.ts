@@ -352,33 +352,50 @@ export const TERMS: Record<'en' | 'he', LegalDocument> = {
   },
 };
 
+/**
+ * When the accessibility statement was last checked against the site. Its own
+ * date, not LEGAL_UPDATED: the law asks when *accessibility* was last reviewed.
+ */
+export const ACCESSIBILITY_REVIEWED = '2026-11-26';
+
 export const ACCESSIBILITY: Record<'en' | 'he', LegalDocument> = {
   en: {
     title: 'Accessibility statement',
     standfirst: 'What has been done so that this archive can be used by everyone, what is not finished, and whom to tell.',
-    updated: LEGAL_UPDATED,
+    updated: `Last reviewed: ${ACCESSIBILITY_REVIEWED}`,
     missingContact: 'The Center has not yet published an address for accessibility requests.',
     missingOfficer:
       'The Center has not yet named the person responsible for accessibility. This statement is incomplete until it does.',
     clauses: [
       {
-        heading: 'What this site aims at',
+        heading: 'The standard',
         body: [
-          'The archive is built to the WCAG 2.1 AA guidelines, which is the standard Israeli regulations point at (Israeli Standard 5568, under the Equal Rights for Persons with Disabilities Regulations, 2013).',
+          'The Indian Jewish Heritage Center is committed to making this archive usable by people with disabilities. The site is built to Israeli Standard 5568, which adopts the Web Content Accessibility Guidelines (WCAG) 2.0 at level AA, as required by the Equal Rights for Persons with Disabilities (Service Accessibility Adjustments) Regulations, 2013.',
         ],
       },
       {
         heading: 'What was done',
-        body: ['These are properties of the site, not intentions:'],
+        body: ['These are properties of the site, checked in its code, not intentions:'],
         list: [
-          'Every page works from the keyboard alone, and the focus outline is a single thick ring that is never removed.',
-          'A “skip to content” link is the first thing on every page.',
-          'Text is set at 18px rather than the browser’s 16, scales from the reader’s own setting, and the layout holds at 200% zoom.',
-          'The page is marked with its language and its direction, so a screen reader reads Hebrew in a Hebrew voice and right to left.',
+          'A “Skip to main content” link is the first thing on every page; it moves the keyboard focus straight to the page’s content.',
+          'Every page works from the keyboard alone: Tab and Shift+Tab move between controls, Enter and Space use them, and Escape closes the menus and returns focus to the button that opened them.',
+          'A thick, high-contrast focus ring shows where the keyboard is, on every link, button and field, and is never removed.',
+          'Each page has one main heading, headings in order, and named regions (header, navigation, main content, footer), so a screen reader can move through it by structure.',
+          'Every button, link and form field has a name a screen reader can say, including buttons that show only an icon. Errors in forms are announced, and the field in error is marked and linked to its message.',
+          'Text meets the contrast the standard requires (at least 4.5:1, or 3:1 for large text), and the edges of form fields and the focus ring are at least 3:1.',
+          'Pages declare their language and direction, so Hebrew is read in a Hebrew voice and laid out right to left; the site also works in English, Hindi, Marathi and Malayalam.',
+          'Text follows the size set in the reader’s own browser, and the layout is designed to reflow rather than scroll sideways when zoomed.',
           'Colour is never the only thing carrying meaning: a community is named as well as coloured, and a decision is worded as well as tinted.',
-          'Images added by the archive carry alternative text, and a record’s own scan carries the record’s title.',
+          'Images in a record carry the record’s title as their text alternative; decorative images and icons are hidden from screen readers. Audio and video players are named.',
           'Animation is small, and none of it runs for a reader whose system asks for reduced motion.',
-          'A dark and a light appearance are both available, and the site follows the system setting until told otherwise.',
+          'The site has no accessibility “overlay” or widget: these properties are in the site itself.',
+        ],
+      },
+      {
+        heading: 'Historical material in the archive',
+        body: [
+          'Much of what the archive holds was not made to be accessible: old documents, handwritten scans, photographs and recordings contributed by families. Their descriptions and transcriptions are written by volunteers and by machine reading, and for many items they are partial or still in progress.',
+          'If you need any specific item in a form you can use — a description of a photograph, a transcription of a document or a recording — ask the Center, naming the item, and it will provide one.',
         ],
       },
       {
@@ -389,6 +406,8 @@ export const ACCESSIBILITY: Record<'en' | 'he', LegalDocument> = {
           'Recordings and video in the archive have a machine transcription where one could be made, but not captions on the player itself.',
           'Scans of handwriting are images. The machine reads what it can and that text is published beside the record, but a hand nobody could read remains a picture.',
           'PDF files contributed to the archive are published as they arrived; the Center does not remake them.',
+          'Videos embedded from YouTube use YouTube’s own player, whose accessibility the Center does not control.',
+          'In the phone scanner, moving the corners of a page by hand needs touch or a mouse. The scanner’s automatic crop, and an ordinary file upload, work from the keyboard.',
         ],
       },
       {
@@ -408,30 +427,41 @@ export const ACCESSIBILITY: Record<'en' | 'he', LegalDocument> = {
 
   he: {
     title: 'הצהרת נגישות',
-    standfirst: 'מה נעשה כדי שאפשר יהיה להשתמש בארכיון הזה, מה עוד לא הושלם, ולמי לפנות.',
-    updated: LEGAL_UPDATED,
+    standfirst: 'מה נעשה כדי שכל אחד יוכל להשתמש בארכיון הזה, מה עוד לא הושלם, ולמי לפנות.',
+    updated: `נבדק לאחרונה: ${ACCESSIBILITY_REVIEWED}`,
     missingContact: 'המרכז עדיין לא פרסם כתובת לפניות בנושא נגישות.',
     missingOfficer:
       'המרכז עדיין לא מינה אחראי נגישות ולא פרסם את פרטיו. עד שזה ייעשה, ההצהרה הזאת אינה שלמה.',
     clauses: [
       {
-        heading: 'לאיזו רמה האתר חותר',
+        heading: 'התקן',
         body: [
-          'הארכיון נבנה לפי הנחיות WCAG 2.1 ברמה AA, התקן שאליו מפנות התקנות בישראל (תקן ישראלי 5568, מכוח תקנות שוויון זכויות לאנשים עם מוגבלות, התשע״ג-2013).',
+          'מרכז מורשת יהדות הודו מחויב להנגיש את הארכיון לאנשים עם מוגבלות. האתר בנוי לפי תקן ישראלי 5568, המאמץ את הנחיות הנגישות לתוכן באינטרנט (WCAG) 2.0 ברמה AA, כנדרש בתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע״ג-2013.',
         ],
       },
       {
         heading: 'מה נעשה',
-        body: ['אלה תכונות של האתר, לא כוונות:'],
+        body: ['אלה תכונות של האתר, שנבדקו בקוד שלו, ולא כוונות:'],
         list: [
-          'כל עמוד פועל מהמקלדת בלבד, וסימון הפוקוס הוא טבעת אחת עבה שלא מוסרת בשום מצב.',
-          'קישור ״דלג לתוכן״ הוא הדבר הראשון בכל עמוד.',
-          'הטקסט מוגדר ב-18 פיקסל במקום 16, מתרחב לפי ההגדרה של הקורא, והפריסה מחזיקה גם בזום 200%.',
-          'העמוד מסומן בשפה ובכיוון שלו, כך שקורא מסך קורא עברית בקול עברי ומימין לשמאל.',
+          'קישור ״דלג לתוכן הראשי״ הוא הדבר הראשון בכל עמוד, והוא מעביר את המיקוד של המקלדת ישר לתוכן העמוד.',
+          'כל עמוד פועל מהמקלדת בלבד: Tab ו-Shift+Tab עוברים בין הפקדים, Enter ורווח מפעילים אותם, ו-Escape סוגר את התפריטים ומחזיר את המיקוד לכפתור שפתח אותם.',
+          'טבעת מיקוד עבה ובניגודיות גבוהה מראה היכן נמצאת המקלדת, בכל קישור, כפתור ושדה, והיא לעולם לא מוסרת.',
+          'לכל עמוד כותרת ראשית אחת, כותרות בסדר הגיוני ואזורים מסומנים (כותרת עליונה, ניווט, תוכן ראשי, כותרת תחתונה), כך שקורא מסך יכול לנוע בו לפי המבנה.',
+          'לכל כפתור, קישור ושדה בטופס יש שם שקורא מסך יכול לומר, כולל כפתורים שמציגים רק סמל. שגיאות בטפסים מוכרזות, והשדה השגוי מסומן ומקושר להודעה שלו.',
+          'הטקסט עומד בניגודיות שהתקן דורש (לפחות 4.5:1, או 3:1 לטקסט גדול), ומסגרות השדות וטבעת המיקוד עומדות ביחס של לפחות 3:1.',
+          'כל עמוד מצהיר על השפה והכיוון שלו, כך שעברית נקראת בקול עברי ומוצגת מימין לשמאל; האתר פועל גם באנגלית, בהינדי, במראטהית ובמלאיאלאם.',
+          'הטקסט הולך לפי הגודל שנקבע בדפדפן של הקורא, והפריסה בנויה להתארגן מחדש בהגדלה במקום לגלול לצדדים.',
           'צבע לעולם אינו הדבר היחיד שנושא משמעות: קהילה גם נקראת בשמה ולא רק נצבעת, והחלטה גם מנוסחת במילים.',
-          'לתמונות שהארכיון מוסיף יש טקסט חלופי, ולסריקה של רשומה יש הכותרת של אותה רשומה.',
+          'לתמונות ברשומה יש הכותרת של הרשומה כטקסט חלופי; תמונות וסמלים קישוטיים מוסתרים מקוראי מסך. לנגני השמע והווידאו יש שם.',
           'האנימציה מעטה, ואף אחת מהן לא רצה אצל מי שהמערכת שלו מבקשת תנועה מופחתת.',
-          'קיימים מצב בהיר ומצב כהה, והאתר הולך לפי הגדרת המערכת עד שמבקשים אחרת.',
+          'באתר אין ״תוסף נגישות״ או וידג׳ט: התכונות האלה נמצאות באתר עצמו.',
+        ],
+      },
+      {
+        heading: 'חומר היסטורי בארכיון',
+        body: [
+          'חלק גדול ממה שהארכיון מחזיק לא נוצר כדי להיות נגיש: מסמכים ישנים, סריקות של כתב יד, ותמונות והקלטות שתרמו משפחות. התיאורים והתמלולים שלהם נכתבים בידי מתנדבים ובקריאת מכונה, ובפריטים רבים הם חלקיים או עדיין בעבודה.',
+          'אם אתם צריכים פריט מסוים בצורה שתוכלו להשתמש בה — תיאור של תמונה, תמלול של מסמך או של הקלטה — פנו למרכז וציינו את הפריט, והמרכז יספק אותה.',
         ],
       },
       {
@@ -442,6 +472,8 @@ export const ACCESSIBILITY: Record<'en' | 'he', LegalDocument> = {
           'להקלטות ולווידאו בארכיון יש תמלול מכונה במקום שאפשר היה להפיק אותו, אבל אין כתוביות בנגן עצמו.',
           'סריקות של כתב יד הן תמונות. המכונה קוראת מה שניתן והטקסט מתפרסם לצד הרשומה, אבל כתב שאיש לא הצליח לפענח נשאר תמונה.',
           'קובצי PDF שנתרמו לארכיון מתפרסמים כפי שהתקבלו, והמרכז אינו בונה אותם מחדש.',
+          'סרטונים שמוטמעים מיוטיוב מוצגים בנגן של יוטיוב, שהנגישות שלו אינה בשליטת המרכז.',
+          'בסורק הטלפון, הזזה ידנית של פינות העמוד דורשת מגע או עכבר. החיתוך האוטומטי של הסורק, והעלאת קובץ רגילה, פועלים מהמקלדת.',
         ],
       },
       {
@@ -459,3 +491,4 @@ export const ACCESSIBILITY: Record<'en' | 'he', LegalDocument> = {
     ],
   },
 };
+

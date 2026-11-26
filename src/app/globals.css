@@ -40,8 +40,12 @@
   --color-ink-3:       #5a7c2a;
 
   /* ── accent ─────────────────────────────────────────────────────────── */
-  --color-accent:        #b45309;  /* muted gold — borders, focus, quiet marks */
-  --color-accent-strong: #d97706;  /* terracotta — the one loud colour */
+  /* Both meet WCAG AA as text on every ground here (>= 4.5:1, worst case
+     surface-2), and paper text on accent-strong is 5.6:1. Until 26.11.2026
+     accent-strong was #d97706 at 3.1:1 — too faint for links, buttons, the
+     queue badge and the focus ring (SI 5568 / WCAG 2.0 AA, 1.4.3). */
+  --color-accent:        #9e4609;  /* deep ochre — links, focus, quiet marks */
+  --color-accent-strong: #a84a0b;  /* terracotta — the one loud colour */
   --color-accent-wash:   #fef3e2;
 
   /* ── secondary ──────────────────────────────────────────────────────── */
@@ -70,6 +74,9 @@
   /* ── structure ──────────────────────────────────────────────────────── */
   --color-rule:        #e6ddcb;  /* warm border, never grey */
   --color-rule-strong: #d8cbb2;
+  /* The edge of a form control: >= 3:1 against every ground (worst 3.55:1),
+     so a field can be seen to be a field. Dividers keep the softer rule. */
+  --color-control:     #857760;
   /* Was #6b6259 at 5.3:1 — over the AA floor and thin for an older reader on a
      screen they did not choose. 7.4:1, which is AAA for body text. */
   --color-muted:       #574f47;
@@ -84,7 +91,7 @@
 
   /* ── states ─────────────────────────────────────────────────────────── */
   --color-positive:    #15803d;
-  --color-caution:     #b45309;
+  --color-caution:     #9e4609;  /* >= 4.5:1 on every ground, incl. accent-wash */
   --color-critical:    #b91c1c;
 
   /*
@@ -250,11 +257,20 @@
     line-height: 1.3;
   }
 
-  /* One unmistakable focus ring everywhere, thick enough to find. */
+  /* One unmistakable focus ring everywhere, thick enough to find:
+     accent-strong is >= 4.6:1 against every ground. Components must not
+     remove it (no `outline-none`); see AGENTS.md, Accessibility. */
   :focus-visible {
     outline: 2.5px solid var(--color-accent-strong);
     outline-offset: 2px;
     border-radius: 4px;
+  }
+
+  /* Placeholders are hints, never labels, but they must still be legible:
+     Tailwind's default (half the text colour) is ~2.8:1 on paper. */
+  ::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
   }
 
   ::selection {

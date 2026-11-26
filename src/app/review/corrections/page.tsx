@@ -14,7 +14,8 @@ export default async function CorrectionsPage() {
   if (!await getCurrentVolunteer()) redirect('/login');
   const { t, language } = await getMessages();
   const [corrections, reports] = await Promise.all([readRecordCorrections(), readRecordReports()]);
-  return <main className="mx-auto max-w-4xl px-6 py-10">
+  // A <div>: the layout's <main id="main-content"> is the page's one main landmark.
+  return <div className="mx-auto max-w-4xl px-6 py-10">
     <h1 className="font-display text-3xl">{t('public.corrections')}</h1>
 
     {/* Private problem reports (0042): never shown on the record itself. */}
@@ -41,7 +42,7 @@ export default async function CorrectionsPage() {
     {!corrections.length && <p className="mt-6">{t('public.noCorrections')}</p>}
     <div className="mt-6 space-y-8">
       {corrections.map(correction => <article key={correction.id} className="card min-w-0 p-5 sm:p-7">
-        <h2 dir="auto" className="mb-3 break-words font-display text-2xl">{correction.record_title || t('record.notFound')}</h2>
+        <h3 dir="auto" className="mb-3 break-words font-display text-2xl">{correction.record_title || t('record.notFound')}</h3>
         <p className="flex flex-wrap gap-3"><strong>{correction.anonymous ? t('public.anonymous') : correction.proposer_name}</strong>
           <time dateTime={correction.created_at}>{new Date(correction.created_at).toLocaleDateString(language.code)}</time></p>
         <Link href={`/portal/${correction.item_id}`} className={buttonClass('quiet', 'my-4')}>{t('public.view')}</Link>
@@ -66,5 +67,5 @@ export default async function CorrectionsPage() {
         <CorrectionDecision id={correction.id} objectionAt={correction.objection_at} />
       </article>)}
     </div>
-  </main>;
+  </div>;
 }

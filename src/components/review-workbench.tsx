@@ -5,7 +5,7 @@ import { CollectorCreditEditor } from '@/components/collector-credit-editor';
 import { ReviewReadingDraft } from '@/components/review-draft-scope';
 import { ReviewDraftControls } from '@/components/review-draft-controls';
 import { ReviewCandidates } from '@/components/review-candidates';
-import { useState } from 'react';
+import { cloneElement, isValidElement, useId, useState } from 'react';
 import { ReviewServerActions } from '@/components/review-server-actions';
 import { useRouter } from 'next/navigation';
 import { useMessages } from '@/lib/i18n/provider';
@@ -452,7 +452,7 @@ export function ReviewWorkbench({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
-              className="w-full rounded-lg border border-rule bg-paper px-4 py-3 focus:border-accent-strong focus:outline-none"
+              className="w-full rounded-lg border border-control bg-paper px-4 py-3 focus:border-accent-strong"
             />
           </FieldRow>
 
@@ -468,7 +468,7 @@ export function ReviewWorkbench({
               rows={4}
               maxLength={4000}
               placeholder={t('wb.descriptionHint')}
-              className="w-full resize-y rounded-lg border border-rule bg-paper px-4 py-3 text-sm focus:border-accent-strong focus:outline-none"
+              className="w-full resize-y rounded-lg border border-control bg-paper px-4 py-3 text-sm focus:border-accent-strong"
             />
           </FieldRow>
 
@@ -485,7 +485,7 @@ export function ReviewWorkbench({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as ItemCategory | '')}
-              className="w-full rounded-lg border border-rule bg-paper px-4 py-3 focus:border-accent-strong focus:outline-none"
+              className="w-full rounded-lg border border-control bg-paper px-4 py-3 focus:border-accent-strong"
             >
               <option value="">{t('wb.notCatalogued')}</option>
               {CATEGORIES.map((c) => (
@@ -511,7 +511,7 @@ export function ReviewWorkbench({
             <select
               value={community}
               onChange={(e) => setCommunity(e.target.value as Community | '')}
-              className="w-full rounded-lg border border-rule bg-paper px-4 py-3 focus:border-accent-strong focus:outline-none"
+              className="w-full rounded-lg border border-control bg-paper px-4 py-3 focus:border-accent-strong"
             >
               <option value="">{t('wb.notIdentified')}</option>
               {COMMUNITIES.map((c) => (
@@ -528,7 +528,7 @@ export function ReviewWorkbench({
               onChange={(e) => setProvenance(e.target.value)}
               maxLength={2000}
               placeholder={t('wb.provenanceHint')}
-              className="w-full rounded-lg border border-rule bg-paper px-4 py-3 focus:border-accent-strong focus:outline-none"
+              className="w-full rounded-lg border border-control bg-paper px-4 py-3 focus:border-accent-strong"
             />
           </FieldRow>
 
@@ -543,7 +543,7 @@ export function ReviewWorkbench({
               onChange={(e) => setLanguage(e.target.value)}
               maxLength={60}
               placeholder={t('wb.languageHint')}
-              className="w-full rounded-lg border border-rule bg-paper px-4 py-3 focus:border-accent-strong focus:outline-none"
+              className="w-full rounded-lg border border-control bg-paper px-4 py-3 focus:border-accent-strong"
             />
           </FieldRow>
 
@@ -558,7 +558,7 @@ export function ReviewWorkbench({
               onChange={(e) => setPeriod(e.target.value)}
               maxLength={120}
               placeholder={t('wb.periodPlaceholder')}
-              className="w-full rounded-lg border border-rule bg-paper px-4 py-3 focus:border-accent-strong focus:outline-none"
+              className="w-full rounded-lg border border-control bg-paper px-4 py-3 focus:border-accent-strong"
             />
           </FieldRow>
 
@@ -573,7 +573,7 @@ export function ReviewWorkbench({
               onChange={(e) => setOriginPlace(e.target.value)}
               maxLength={200}
               placeholder={t('wb.placeHint')}
-              className="w-full rounded-lg border border-rule bg-paper px-4 py-3 focus:border-accent-strong focus:outline-none"
+              className="w-full rounded-lg border border-control bg-paper px-4 py-3 focus:border-accent-strong"
             />
           </FieldRow>
 
@@ -853,11 +853,12 @@ function ReadingEditor({
             `monospace`, which matches every character, so a Hebrew or
             Malayalam transcription never reached a face that could draw it. */}
         <textarea
+          aria-label={label}
           dir="auto"
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={Math.min(14, Math.max(4, text.split('\n').length + 1))}
-          className="transcription w-full resize-y rounded-lg border border-rule bg-paper p-3 focus:border-accent-strong focus:outline-none"
+          className="transcription w-full resize-y rounded-lg border border-control bg-paper p-3 focus:border-accent-strong"
         />
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <button
@@ -922,10 +923,19 @@ function FieldRow({
   onAdopt?: () => void;
   adopted?: boolean;
 }) {
+  // The label is a real <label> for a single native field, and names the group
+  // otherwise. As a bare <span> it named nothing: every workbench field was
+  // announced without a name (WCAG 1.3.1, 4.1.2).
+  const id = useId();
+  const native = isValidElement<{ id?: string }>(children) && typeof children.type === 'string'
+    && ['input', 'select', 'textarea'].includes(children.type);
+  const fieldId = native ? (children.props.id ?? id) : undefined;
   return (
-    <div>
+    <div role={native ? undefined : 'group'} aria-labelledby={native ? undefined : `${id}-label`}>
       <div className="mb-1.5 flex items-baseline justify-between gap-3">
-        <span className="eyebrow">{label}</span>
+        {native
+          ? <label id={`${id}-label`} htmlFor={fieldId} className="eyebrow">{label}</label>
+          : <span id={`${id}-label`} className="eyebrow">{label}</span>}
         {suggestion && onAdopt && (
           <button
             onClick={onAdopt}
@@ -939,7 +949,7 @@ function FieldRow({
           </button>
         )}
       </div>
-      {children}
+      {native ? cloneElement(children, { id: fieldId }) : children}
       {suggestion && (
         <p className="machine mt-1.5 flex gap-1.5 text-muted">
           <ArrowLeft size={12} className="mt-1 shrink-0 rotate-90" aria-hidden />

@@ -45,6 +45,52 @@ never edit it, never deploy it, never share its database.
 6. **`SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` are server-only.** Never
    prefix either with `NEXT_PUBLIC_`.
 
+## Accessibility (WCAG 2.0 AA / Israeli SI 5568)
+
+The law requires it, and the public statement at `/accessibility` promises it.
+Every PR keeps it true; a screen that breaks one of these is not finished.
+
+- **Structure.** The root layout owns the landmarks: one `<header>`, one
+  `<main id="main-content">`, one `<footer>`. A page never adds another
+  `<main>`. Each page has exactly one `<h1>` (visually hidden with `sr-only` if
+  the design has no visible title) and headings never skip a level. Several
+  `<nav>`s on one page each get a distinct `aria-label`.
+- **Keyboard.** Everything works with `Tab`, `Shift+Tab`, `Enter`, `Space` and
+  `Escape`. Interactive things are `<button>` or `<a>`/`<Link>`, never a
+  clickable `<div>`/`<span>`. No keyboard traps. Closing a menu, panel or
+  dialog (including with `Escape`) and finishing an inline edit put focus back
+  on the control that opened it. Do not claim an ARIA pattern you do not
+  implement: no `role="menu"` or `role="tab"` without their arrow-key
+  behaviour — use a disclosure (`aria-expanded` + `aria-controls`) or pressed
+  buttons (`aria-pressed`) in a named `role="group"` instead.
+- **Focus.** Never remove the global `:focus-visible` ring (`outline-none`,
+  `focus:outline-none` are banned on controls). The only exception is a
+  non-interactive `tabIndex={-1}` target such as `<main>`.
+- **Names.** Every input, select and textarea has a `<label>` (or
+  `aria-label`/`aria-labelledby`); placeholders are hints, never labels. Every
+  icon-only button or link has an `aria-label`. Informative images have
+  meaningful `alt` (an item's title at least); decorative images use `alt=""`
+  and decorative icons/SVGs `aria-hidden="true"` (lucide icons do this by
+  default — do not undo it). `<audio>`, `<video>` and `<iframe>` are named.
+- **Contrast** (light mode only). Text ≥ 4.5:1, large text ≥ 3:1, and UI
+  boundaries (form-field edges, focus ring) ≥ 3:1 — against every ground they
+  sit on, including `surface-2`. Use the tokens in `globals.css`
+  (`border-control` for field edges); measure any new colour before using it.
+- **Announcements.** Form errors use `role="alert"`; async progress and
+  "saved/sent" messages use `role="status"`/`aria-live="polite"`. A field in
+  error gets `aria-invalid` and `aria-describedby` pointing at its message.
+- **Language and direction.** `lang` and `dir` are set on `<html>` by the root
+  layout from the reader's language (`he` → `rtl`). Use logical CSS
+  (`ms-`/`me-`, `ps-`/`pe-`, `start`/`end`, `text-start`), `dir="auto"` on
+  user-typed text, and `dir="ltr"` (or `<bdi>`) for URLs, phone numbers and
+  codes inside Hebrew.
+- **No overlays.** Never add a third-party accessibility widget or overlay;
+  fix the code.
+- **Tests.** New screens get a render test covering their names, roles and
+  error announcements (see `tests/unit/accessibility.test.tsx`). Update
+  `/accessibility` (`src/lib/legal.ts`, both languages, review date) when a
+  change alters what it says.
+
 ## Before saying a feature is done
 
 ```bash

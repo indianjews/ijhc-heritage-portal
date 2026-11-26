@@ -6,7 +6,7 @@ import { useMessages } from '@/lib/i18n/provider';
 import { REPORT_REASONS, type CorrectionField, type ReportReason } from '@/lib/items/public-input';
 import type { PublicComment } from '@/lib/items/queries';
 
-const inputClass = 'min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong';
+const inputClass = 'min-h-11 w-full min-w-0 rounded-lg border border-control bg-paper px-3 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong';
 
 export function RecordFeedback({ itemId, token, fields, comments, expert, locale = 'en' }: {
   itemId: string; token: string; fields: CorrectionField[]; comments: PublicComment[]; expert: boolean; locale?: string;

@@ -124,7 +124,7 @@ export function Lightbox({
           {kind === 'pdf' && (
             <iframe src={url} title={current.file.name} className="h-[78vh] w-full max-w-3xl bg-paper" />
           )}
-          {kind === 'audio' && <audio src={url} controls className="w-full max-w-xl" />}
+          {kind === 'audio' && <audio src={url} controls aria-label={current.file.name} className="w-full max-w-xl" />}
           {kind === 'video' && (
             // The same big play button as everywhere else on the site.
             <PlayableVideo src={url} label={current.file.name} className="aspect-video w-[min(100%,138vh)] max-h-[78vh] rounded-xl" />

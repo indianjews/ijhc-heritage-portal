@@ -42,16 +42,16 @@ export function ReviewQueue({ items }: { items: QueueItem[] }) {
       <div className="grid min-w-0 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
         <label className="block min-w-0"><span className="mb-1.5 block font-medium">{t('review3.filterText')}</span>
           <input type="search" dir="auto" value={text} onChange={e => refine(() => setText(e.target.value))} placeholder={t('review3.filterTextHint')}
-            className="min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 text-start focus-visible:outline-2 focus-visible:outline-accent-strong" /></label>
+            className="min-h-11 w-full min-w-0 rounded-lg border border-control bg-paper px-3 py-2 text-start focus-visible:outline-2 focus-visible:outline-accent-strong" /></label>
         <label className="block min-w-0"><span className="mb-1.5 block font-medium">{t('filters.community')}</span>
           <select value={community} onChange={e => refine(() => setCommunity(e.target.value))}
-            className="min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong">
+            className="min-h-11 w-full min-w-0 rounded-lg border border-control bg-paper px-3 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong">
             <option value="">{t('filters.all')}</option>
             {options.communities.map(value => <option key={value} value={value}>{t(communityKey(value as Community))}</option>)}
           </select></label>
         {options.categories.length > 0 && <label className="block min-w-0"><span className="mb-1.5 block font-medium">{t('filters.category')}</span>
           <select value={category} onChange={e => refine(() => setCategory(e.target.value))}
-            className="min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong">
+            className="min-h-11 w-full min-w-0 rounded-lg border border-control bg-paper px-3 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong">
             <option value="">{t('filters.all')}</option>
             {options.categories.map(value => <option key={value} value={value}>{t(categoryKey(value as ItemCategory))}</option>)}
             {options.uncategorised && <option value={NONE}>{t('review3.filterUncategorised')}</option>}

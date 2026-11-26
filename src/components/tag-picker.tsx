@@ -82,7 +82,7 @@ export function TagPicker({ chosen, offered, suggested, onChange, expert = false
         if (event.key === 'Escape') setOpen(false);
         if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); if (valid) void add(query); }
       }}
-      className="min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 focus-visible:outline-2 focus-visible:outline-accent-strong" />
+      className="min-h-11 w-full min-w-0 rounded-lg border border-control bg-paper px-3 focus-visible:outline-2 focus-visible:outline-accent-strong" />
     {valid && !has(query) && !known(query) && <button type="button" className={control} onClick={() => void add(query)}>
       {known(query) ? t('review3.useTerm', { term: canonical(query) }) : t(expert ? 'tags.create' : 'public.suggestTag', { text: query.trim() })}
     </button>}

@@ -31,7 +31,7 @@ export function ContributorEditForm({ itemId, token, title, description }: {
     wasOpen.current = open;
   }, [open]);
   const saving = useRef(false);
-  const control = 'min-h-11 rounded-lg border border-rule bg-paper px-4 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong disabled:opacity-60';
+  const control = 'min-h-11 rounded-lg border border-control bg-paper px-4 py-2 focus-visible:outline-2 focus-visible:outline-accent-strong disabled:opacity-60';
 
   async function save(event: React.FormEvent) {
     event.preventDefault();

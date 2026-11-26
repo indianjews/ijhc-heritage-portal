@@ -74,7 +74,8 @@ export async function LegalPage({
               {officerName ? (
                 <>
                   {officerName}
-                  {officerPhone ? ` · ${officerPhone}` : ''}
+                  {/* LTR inside a Hebrew line, or "+972 54…" is reordered into nonsense. */}
+                  {officerPhone ? <> · <a href={`tel:${officerPhone.replace(/\s+/g, '')}`} className="underline underline-offset-2"><bdi dir="ltr">{officerPhone}</bdi></a></> : ''}
                 </>
               ) : (
                 <span className="text-caution">{doc.missingOfficer}</span>

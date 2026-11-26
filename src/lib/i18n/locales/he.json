@@ -112,7 +112,7 @@
   "site.short": "IJHC",
   "site.home": "Indian Jewish Heritage Center — דף הבית",
   "site.description": "ארכיון דיגיטלי של קהילות Bene Israel, Cochin, Baghdadi ו-Bnei Menashe. ארבעה יובלים, נהר אחד.",
-  "site.skipToContent": "דילוג לתוכן",
+  "site.skipToContent": "דלג לתוכן הראשי",
   "nav.menu": "תפריט",
   "nav.openMenu": "פתיחת התפריט",
   "nav.closeMenu": "סגירת התפריט",
@@ -781,7 +781,7 @@
   "legal.contactHeading": "למי לפנות",
   "nav.privacy": "פרטיות",
   "nav.terms": "תנאי שימוש",
-  "nav.accessibility": "נגישות",
+  "nav.accessibility": "הצהרת נגישות",
   "stats.heading": "סטטיסטיקות מבקרים",
   "stats.body": "מותר למרכז לספור ביקורים בארכיון, כדי לדעת אילו רשומות מחפשים? מה שאתם שולחים אינו נמדד, וסירוב לא משנה דבר במה שאפשר לעשות כאן.",
   "stats.accept": "מאשר",
@@ -1095,5 +1095,9 @@
   "review3.filterTextHint": "כותרת, תיאור, שם או קהילה",
   "review3.filterUncategorised": "עוד לא קוטלג",
   "review3.filterShowing": "מוצגים {shown} מתוך {total}",
-  "review3.filterNone": "שום פריט בתור לא תואם."
+  "review3.filterNone": "שום פריט בתור לא תואם.",
+  "login.mode": "כניסה או בקשת חשבון",
+  "link.address": "כתובת של עמוד אינטרנט או סרטון",
+  "vocab.mergeTarget": "המונח ש\"{term}\" יהיה כתיב נוסף שלו",
+  "review.staleInLanguage": "חלק מהתרגומים אינם מעודכנים"
 }

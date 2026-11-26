@@ -190,7 +190,7 @@ export function AccountManager({ accounts, currentId }: { accounts: Profile[]; c
                     onChange={(e) => setRole(profile, e.target.value as UserRole)}
                     disabled={busyId === profile.id}
                     aria-label={t('accounts.roleFor', { email: profile.email })}
-                    className="h-11 rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:outline-none disabled:opacity-50"
+                    className="h-11 rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong disabled:opacity-50"
                   >
                     <option value="volunteer">{t('accounts.volunteer')}</option>
                     <option value="admin">{t('accounts.administrator')}</option>

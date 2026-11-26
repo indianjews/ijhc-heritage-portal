@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { within, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TranslationDeck } from '@/components/translation-deck';
@@ -59,7 +59,8 @@ describe('the languages a record will be published in', () => {
     // Hebrew: two fields, one current and one stale, so one of two.
     expect(await screen.findByText('עברית')).toBeInTheDocument();
     expect(screen.getByText('മലയാളം')).toBeInTheDocument();
-    const tabs = screen.getAllByRole('tab');
+    // The language switcher is a group of pressed buttons (not ARIA tabs).
+    const tabs = within(screen.getByRole('group', { name: /./ })).getAllByRole('button');
     expect(tabs).toHaveLength(2);
     expect(tabs[0]).toHaveTextContent('1/2');
     expect(tabs[1]).toHaveTextContent('1/2');
@@ -131,16 +132,16 @@ describe('the languages a record will be published in', () => {
 describe('which language the deck opens on', () => {
   it('opens on the language the site is set to', async () => {
     render(<TranslationDeck itemId="abc" siteLanguage="ml" />);
-    const tabs = await screen.findAllByRole('tab');
+    const tabs = within(await screen.findByRole('group', { name: /./ })).getAllByRole('button');
     const malayalam = tabs.find((tab) => tab.textContent?.includes('മലയാളം'));
-    expect(malayalam).toHaveAttribute('aria-selected', 'true');
+    expect(malayalam).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('falls back to the first language when the site is in one the record has no tab for', async () => {
     // English is the source language, so it has no tab of its own. An empty
     // panel would be worse than the wrong tab.
     render(<TranslationDeck itemId="abc" siteLanguage="en" />);
-    const tabs = await screen.findAllByRole('tab');
-    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    const tabs = within(await screen.findByRole('group', { name: /./ })).getAllByRole('button');
+    expect(tabs[0]).toHaveAttribute('aria-pressed', 'true');
   });
 });

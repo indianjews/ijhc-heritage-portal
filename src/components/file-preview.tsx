@@ -68,7 +68,7 @@ export function FilePreview({
     return (
       <div className={cn('flex h-full w-full flex-col justify-center gap-3 bg-paper-2 p-6', className)}>
         <Music size={22} className="text-muted" aria-hidden />
-        <audio {...media.props} controlsList={media.protectedView ? 'nodownload noremoteplayback' : undefined} controls preload="none" src={src} className="w-full">
+        <audio {...media.props} aria-label={alt} controlsList={media.protectedView ? 'nodownload noremoteplayback' : undefined} controls preload="none" src={src} className="w-full">
           {t('file.cannotPlay')}
         </audio>
       </div>
@@ -119,6 +119,7 @@ export function FilePreview({
         src={src}
         poster={file.preview_path ? thumbUrl(file) : null}
         label={`${t('file.play')}: ${alt}`}
+        name={alt}
         className={cn('aspect-video w-full rounded-xl', className)}
       />
     );

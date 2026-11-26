@@ -70,6 +70,7 @@ export function MastheadShell({
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
   const header = useRef<HTMLElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
   const approved = profile?.role === 'volunteer' || profile?.role === 'admin';
   const hasRow = approved || profile?.role === 'pending';
 
@@ -142,7 +143,13 @@ export function MastheadShell({
     const onDown = (e: PointerEvent) => {
       if (!header.current?.contains(e.target as Node)) setOpenOn(null);
     };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpenOn(null);
+    // Escape returns focus to the menu button: the panel is about to unmount,
+    // and focus left inside it would otherwise fall to <body> (WCAG 2.4.3).
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpenOn(null);
+      toggle.current?.focus();
+    };
     window.addEventListener('pointerdown', onDown);
     window.addEventListener('keydown', onKey);
     return () => {
@@ -181,6 +188,7 @@ export function MastheadShell({
             <AccountNav profile={profile} layout="bar" />
           </div>
           <button
+            ref={toggle}
             type="button"
             aria-expanded={open}
             aria-controls="masthead-panel"
@@ -202,6 +210,7 @@ export function MastheadShell({
             type="button"
             onClick={reveal}
             aria-label={t('nav.archiveAdmin')}
+            aria-expanded={rowOpen}
             tabIndex={rowOpen ? -1 : 0}
             className={[
               'absolute start-1/2 top-0 flex h-7 -translate-x-1/2 items-center gap-1 rounded-b-xl border border-t-0 border-rule bg-paper/95 px-3 text-xs font-medium text-muted shadow-lift backdrop-blur-md transition-opacity duration-300 hover:text-ink rtl:translate-x-1/2',
@@ -242,7 +251,7 @@ export function MastheadShell({
                   aria-label={pinned ? t('nav.unpinRow') : t('nav.pinRow')}
                   title={pinned ? t('nav.unpinRow') : t('nav.pinRow')}
                   className={[
-                    'flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-surface',
+                    'flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-surface',
                     pinned ? 'text-accent-strong' : 'text-muted',
                   ].join(' ')}
                 >

@@ -94,7 +94,7 @@ function errorsOf(card: Card) {
   });
 }
 
-const inputClass = 'min-h-11 w-full rounded-lg border border-rule bg-paper px-3 py-2 text-start focus:border-accent-strong focus:outline-none';
+const inputClass = 'min-h-11 w-full rounded-lg border border-control bg-paper px-3 py-2 text-start focus:border-accent-strong';
 
 export function BulkUploadFlow({ consentVersion }: { consentVersion: string }) {
   const t = useMessages();
@@ -319,6 +319,9 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
     return key ? t(key) : undefined;
   };
 
+  // Shown as soon as a non-YouTube address is typed, not only after Send.
+  const youtubeError = shown('youtube') ?? (card.youtubeUrl.trim() && errors.youtube ? t('bulk.err.youtube') : undefined);
+
   // The video's own title, as a title candidate only (the same call the recording upload makes).
   const videoId = youtubeVideoId(card.youtubeUrl);
   useEffect(() => {
@@ -387,7 +390,7 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
 
       <div id={`${id}-body`} hidden={card.collapsed} className="mt-5 space-y-6">
         {/* 1. Media */}
-        <fieldset className="space-y-3" disabled={disabled}>
+        <fieldset className="space-y-3" disabled={disabled} aria-describedby={shown('media') ? `${id}-media-error` : undefined}>
           <legend className="font-medium">{t('bulk.media')} <span className="text-critical">*</span></legend>
           <p className="text-sm text-muted">{t('bulk.mediaHint')}</p>
           <label className={buttonClass('quiet', 'cursor-pointer')}>
@@ -427,16 +430,14 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
               className={cn(inputClass, shown('youtube') && 'border-critical')}
               placeholder="https://www.youtube.com/watch?v=…"
               value={card.youtubeUrl}
-              aria-describedby={`${id}-youtube-hint`}
-              aria-invalid={Boolean(shown('youtube'))}
+              aria-describedby={[`${id}-youtube-hint`, youtubeError ? `${id}-youtube-error` : ''].filter(Boolean).join(' ')}
+              aria-invalid={Boolean(youtubeError)}
               onChange={(e) => update({ youtubeUrl: e.target.value, youtubeTitle: '' })}
             />
             {/* The YouTube rule is shown as soon as a non-YouTube address is typed. */}
-            {(shown('youtube') || (card.youtubeUrl.trim() && errors.youtube)) && (
-              <p role="alert" className="text-sm text-critical">{shown('youtube') ?? t('bulk.err.youtube')}</p>
-            )}
+            {youtubeError && <p id={`${id}-youtube-error`} role="alert" className="text-sm text-critical">{youtubeError}</p>}
           </div>
-          {shown('media') && <p role="alert" className="text-sm text-critical">{shown('media')}</p>}
+          {shown('media') && <p id={`${id}-media-error`} role="alert" className="text-sm text-critical">{shown('media')}</p>}
         </fieldset>
 
         {/* 2. Notes */}
@@ -470,6 +471,7 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
             value={card.period}
             disabled={disabled || card.periodUnknown}
             aria-invalid={Boolean(shown('period'))}
+            aria-describedby={shown('period') ? `${id}-period-error` : undefined}
             onChange={(e) => update({ period: e.target.value })}
           />
           <label className="flex min-h-11 cursor-pointer items-center gap-3">
@@ -481,13 +483,15 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
             />
             {t('bulk.dateUnknown')}
           </label>
-          {shown('period') && <p role="alert" className="text-sm text-critical">{shown('period')}</p>}
+          {shown('period') && <p id={`${id}-period-error`} role="alert" className="text-sm text-critical">{shown('period')}</p>}
         </fieldset>
 
         {/* 4. Copyright */}
         <fieldset className="space-y-2" disabled={disabled}>
-          <legend className="font-medium">{t('bulk.credit')} <span className="text-critical">*</span></legend>
-          <div role="radiogroup" className="flex flex-wrap gap-3">
+          <legend id={`${id}-credit-legend`} className="font-medium">{t('bulk.credit')} <span className="text-critical">*</span></legend>
+          <div role="radiogroup" aria-labelledby={`${id}-credit-legend`} aria-required="true"
+            aria-invalid={Boolean(shown('credit')) || undefined}
+            aria-describedby={shown('credit') ? `${id}-credit-error` : undefined} className="flex flex-wrap gap-3">
             {([true, false] as const).map((value) => (
               <label key={String(value)} className={cn('flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-4',
                 card.creditRequired === value ? 'border-accent-strong bg-accent-wash' : 'border-rule-strong bg-paper')}>
@@ -502,7 +506,7 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
               </label>
             ))}
           </div>
-          {shown('credit') && <p role="alert" className="text-sm text-critical">{shown('credit')}</p>}
+          {shown('credit') && <p id={`${id}-credit-error`} role="alert" className="text-sm text-critical">{shown('credit')}</p>}
           {card.creditRequired && (
             <div className="space-y-1.5">
               <label htmlFor={`${id}-collector`} className="block font-medium">{t('bulk.collector')} <span className="text-critical">*</span></label>
@@ -514,9 +518,10 @@ function ItemCard({ card, number, disabled, canRemove, update, remove, applyToAl
                 className={cn(inputClass, shown('collector') && 'border-critical')}
                 value={card.collectorName}
                 aria-invalid={Boolean(shown('collector'))}
+                aria-describedby={shown('collector') ? `${id}-collector-error` : undefined}
                 onChange={(e) => update({ collectorName: e.target.value })}
               />
-              {shown('collector') && <p role="alert" className="text-sm text-critical">{shown('collector')}</p>}
+              {shown('collector') && <p id={`${id}-collector-error`} role="alert" className="text-sm text-critical">{shown('collector')}</p>}
             </div>
           )}
         </fieldset>

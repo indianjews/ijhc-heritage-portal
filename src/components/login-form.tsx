@@ -104,9 +104,11 @@ export function LoginForm() {
 
   return (
     <>
-      <div className="mt-8 flex gap-1 border-b border-rule" role="tablist">
+      {/* A two-way switch, so pressed buttons in a named group — not ARIA tabs,
+          which promise panels and arrow keys this does not have. */}
+      <div className="mt-8 flex gap-1 border-b border-rule" role="group" aria-label={t('login.mode')}>
         <ModeTab active={mode === 'sign-in'} onClick={() => setMode('sign-in')}>
-          Sign in
+          {t('nav.signIn')}
         </ModeTab>
         <ModeTab active={mode === 'request'} onClick={() => setMode('request')}>
           {t('login.askForAccount')}
@@ -123,7 +125,7 @@ export function LoginForm() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               maxLength={120}
-              className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+              className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30"
             />
           </label>
         )}
@@ -133,10 +135,12 @@ export function LoginForm() {
           <input
             type="email"
             required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? 'login-error' : undefined}
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+            className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30"
           />
         </label>
 
@@ -145,20 +149,22 @@ export function LoginForm() {
           <input
             type="password"
             required
+            aria-invalid={error ? true : undefined}
+            aria-describedby={[mode === 'request' ? 'login-password-hint' : '', error ? 'login-error' : ''].filter(Boolean).join(' ') || undefined}
             minLength={mode === 'request' ? 10 : undefined}
             autoComplete={mode === 'request' ? 'new-password' : 'current-password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+            className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30"
           />
           {mode === 'request' && (
-            <span className="mt-1.5 block text-xs text-muted">{t('login.passwordHint')}</span>
+            <span id="login-password-hint" className="mt-1.5 block text-xs text-muted">{t('login.passwordHint')}</span>
           )}
         </label>
 
         {mode === 'sign-in' && <Link href="/login/forgot" className="inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-accent">{t('recovery.forgot')}</Link>}
         {error && (
-          <p role="alert" className="rounded-lg border-s-[3px] border-critical bg-critical/8 px-3 py-2 text-sm text-critical">
+          <p id="login-error" role="alert" className="rounded-lg border-s-[3px] border-critical bg-critical/8 px-3 py-2 text-sm text-critical">
             {error}
           </p>
         )}
@@ -169,7 +175,7 @@ export function LoginForm() {
           className="flex h-14 w-full items-center justify-center gap-2 rounded-full bg-primary font-medium text-white transition-colors duration-200 hover:bg-primary-strong disabled:pointer-events-none disabled:opacity-60"
         >
           {busy && <Loader2 size={16} className="animate-spin" />}
-          {mode === 'sign-in' ? (busy ? t('login.signingIn') : 'Sign in') : busy ? t('login.sending') : t('login.sendRequest')}
+          {mode === 'sign-in' ? (busy ? t('login.signingIn') : t('nav.signIn')) : busy ? t('login.sending') : t('login.sendRequest')}
         </button>
 
         <p className="text-sm leading-relaxed text-muted">
@@ -194,8 +200,7 @@ function ModeTab({
   return (
     <button
       type="button"
-      role="tab"
-      aria-selected={active}
+      aria-pressed={active}
       onClick={onClick}
       className={[
         'flex h-11 items-center px-4 transition-colors',

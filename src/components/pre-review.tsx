@@ -217,11 +217,11 @@ export function PreReview({
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="min-w-0"><span className="mb-1 block">{t('replace.find')}</span>
                 <input value={find} onChange={(e) => { setFind(e.target.value); setConfirming(false); setApplied(null); }} dir="auto" maxLength={200}
-                  className="h-11 w-full rounded-lg border border-rule px-3 focus:outline-2 focus:outline-accent-strong" />
+                  className="h-11 w-full rounded-lg border border-control px-3 focus:outline-2 focus:outline-accent-strong" />
               </label>
               <label className="min-w-0"><span className="mb-1 block">{t('replace.with')}</span>
                 <input value={replacement} onChange={(e) => { setReplacement(e.target.value); setConfirming(false); setApplied(null); }} dir="auto" maxLength={200}
-                  className="h-11 w-full rounded-lg border border-rule px-3 focus:outline-2 focus:outline-accent-strong" />
+                  className="h-11 w-full rounded-lg border border-control px-3 focus:outline-2 focus:outline-accent-strong" />
               </label>
             </div>
             <p className="text-sm text-muted">{t('replace.scope')}</p>
@@ -371,7 +371,7 @@ function EntryPanel({
             value={draft.title}
             onChange={(e) => onChange({ ...draft, title: e.target.value })}
             maxLength={200}
-            className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+            className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30"
           />
         </label>
       )}
@@ -411,7 +411,7 @@ function EntryPanel({
                 onChange={(e) => onChange({ ...draft, description: e.target.value })}
                 rows={4}
                 maxLength={4000}
-                className="w-full resize-y rounded-lg border border-rule bg-paper px-4 py-3 leading-relaxed focus:border-accent-strong focus:outline-none"
+                className="w-full resize-y rounded-lg border border-control bg-paper px-4 py-3 leading-relaxed focus:border-accent-strong"
               />
               <Suggested
                 value={analysis.summary}
@@ -686,7 +686,7 @@ function Reading({
                 onCorrect(block.key, e.target.value);
               }}
               rows={Math.min(12, Math.max(4, block.text.split('\n').length + 1))}
-              className="transcription w-full resize-y rounded-lg border border-rule bg-paper p-3 focus:border-accent-strong focus:outline-none"
+              className="transcription w-full resize-y rounded-lg border border-control bg-paper p-3 focus:border-accent-strong"
             />
             <span className="mt-1.5 block text-sm text-muted">
               {correction?.[block.key] !== undefined && correction[block.key] !== (analysis[block.key] ?? '')

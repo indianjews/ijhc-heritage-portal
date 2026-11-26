@@ -14,7 +14,7 @@ import { validateFile } from '@/lib/files/validate';
 import { cn } from '@/lib/utils';
 import { buttonClass } from '@/components/primitives';
 
-const inputClass = 'h-11 w-full rounded-lg border border-rule bg-paper px-3 focus:border-accent-strong focus:outline-none';
+const inputClass = 'h-11 w-full rounded-lg border border-control bg-paper px-3 focus:border-accent-strong';
 
 type UploadedImage = {
   id: string;
@@ -231,9 +231,11 @@ export function RecordingUploadFlow() {
         <label className="block font-medium" htmlFor="rec-url">
           {t('upload.recording.urlLabel')}
         </label>
-        <p className="text-sm text-muted">{t('upload.recording.urlHint')}</p>
+        <p id="rec-url-hint" className="text-sm text-muted">{t('upload.recording.urlHint')}</p>
         <input
           id="rec-url"
+          aria-invalid={url.length > 0 && !urlValid ? true : undefined}
+          aria-describedby={url.length > 0 && !urlValid ? 'rec-url-hint rec-url-error' : 'rec-url-hint'}
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -245,7 +247,7 @@ export function RecordingUploadFlow() {
           dir="ltr"
         />
         {url.length > 0 && !urlValid && (
-          <p className="text-sm text-red-600">{t('upload.recording.urlInvalid')}</p>
+          <p id="rec-url-error" role="alert" className="text-sm text-critical">{t('upload.recording.urlInvalid')}</p>
         )}
       </div>
 

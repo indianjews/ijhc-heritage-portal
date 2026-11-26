@@ -161,7 +161,7 @@ export function FamilyManager({
             onChange={(e) => setName(e.target.value)}
             maxLength={80}
             placeholder="Sassoon"
-            className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+            className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30"
           />
         </label>
 
@@ -170,7 +170,7 @@ export function FamilyManager({
           <select
             value={community}
             onChange={(e) => setCommunity(e.target.value as Community)}
-            className="h-11 rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:outline-none"
+            className="h-11 rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong"
           >
             {COMMUNITY_ORDER.map((c) => (
               <option key={c} value={c}>
@@ -196,7 +196,7 @@ export function FamilyManager({
             onChange={(e) => setNotes(e.target.value)}
             maxLength={400}
             placeholder={t('families.examplePlaceholder')}
-            className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+            className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30"
           />
         </label>
       </form>
@@ -363,7 +363,7 @@ export function FamilyManager({
                                 onChange={(e) => setContactEmail(e.target.value)}
                                 maxLength={160}
                                 placeholder="ruth@example.com"
-                                className="h-11 w-full rounded-lg border border-rule bg-paper px-3 focus:border-accent-strong focus:outline-none"
+                                className="h-11 w-full rounded-lg border border-control bg-paper px-3 focus:border-accent-strong"
                               />
                             </label>
                             <label className="min-w-[10rem] flex-1">
@@ -373,7 +373,7 @@ export function FamilyManager({
                                 onChange={(e) => setContactName(e.target.value)}
                                 maxLength={120}
                                 placeholder={t('families.nameOptional')}
-                                className="h-11 w-full rounded-lg border border-rule bg-paper px-3 focus:border-accent-strong focus:outline-none"
+                                className="h-11 w-full rounded-lg border border-control bg-paper px-3 focus:border-accent-strong"
                               />
                             </label>
                             <button
@@ -430,7 +430,7 @@ export function FamilyManager({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={t('families.findAddress')}
-                className="h-11 w-full max-w-md rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:outline-none"
+                className="h-11 w-full max-w-md rounded-lg border border-control bg-paper px-4 focus:border-accent-strong"
               />
             </label>
 
@@ -495,7 +495,7 @@ export function FamilyManager({
                           onChange={(e) => setDraftEmail(e.target.value)}
                           maxLength={160}
                           aria-label={`Corrected address for ${contact.email}`}
-                          className="h-11 min-w-[16rem] flex-1 rounded-lg border border-rule-strong bg-paper px-3 focus:border-accent-strong focus:outline-none"
+                          className="h-11 min-w-[16rem] flex-1 rounded-lg border border-rule-strong bg-paper px-3 focus:border-accent-strong"
                         />
                         <button
                           type="button"
