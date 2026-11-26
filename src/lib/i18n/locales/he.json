@@ -1143,5 +1143,8 @@
   "accounts.window.err.both": "יש לקבוע את שני התאריכים, או לנקות את שניהם.",
   "accounts.window.err.date": "יש להזין תאריכים תקינים.",
   "accounts.window.err.order": "תאריך ההתחלה חייב להיות לפני תאריך הסיום או באותו יום.",
-  "accounts.window.err.notPending": "רק לחשבון שממתין לאישור אפשר לתת חלון."
+  "accounts.window.err.notPending": "רק לחשבון שממתין לאישור אפשר לתת חלון.",
+  "archive.dropPrompt": "גררו לכאן תיקייה או קבצים, או בחרו באמצעות הכפתורים למטה",
+  "bulk.dropPrompt": "גררו לכאן תמונות, קובצי PDF או סרטונים, או בחרו באמצעות הכפתור למטה",
+  "dropzone.release": "שחררו כדי להוסיף את הקבצים"
 }

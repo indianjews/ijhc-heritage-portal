@@ -102,6 +102,10 @@ src/components/               presentational components; data arrives as props
                               review-draft-*, review-candidates, review-read-only,
                               review-server-actions (duplicates, re-read), collector-credit-editor
   review-queue.tsx, review-bulk-table.tsx   list view and bulk approval table
+  dropzone.tsx                drag-and-drop panel around the real picker buttons (not a control
+                              itself: no role, no tab stop); used by archive-upload-flow (files and
+                              whole folders, paths kept) and each bulk-upload card's media area;
+                              a drop goes through the same handler, allow-list and messages as the button
   record-feedback.tsx         public comments + correction form
   record-edit-link.tsx        server component: shows "Edit" only to who may edit
   portal-filters.tsx, related-value.tsx     filters/chips and linked field values
@@ -132,11 +136,12 @@ src/lib/
                               (Apps Script Web App; secret in the JSON body, redacted from every error)
   upload/                     archive-pairing.ts (pure grouping), archive-access.ts (pure mirror of
                               can_archive_upload(), Israel date; decides nav only), archive-access-server.ts
-                              (getArchiveUploader: asks the DB), archive-item.ts (route body, Zod)
+                              (getArchiveUploader: asks the DB), archive-item.ts (route body, Zod), drop.ts (files from a drop; walks dropped
+                              folders with webkitGetAsEntry so relativePath matches <input webkitdirectory>)
   rate-limit.ts               in-memory limiter (per instance; good enough against casual spam)
 
 supabase/migrations/          0001…0043, applied in order. Never edit an applied migration.
-tests/unit/                   Vitest (≈890 tests). tests/e2e/ Playwright (permissions, admin).
+tests/unit/                   Vitest (≈900 tests). tests/e2e/ Playwright (permissions, admin).
 scripts/                      deploy, backup, seed, translate-ui, backfill-checksums, guides/capture
 docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisions), phase reports
 ```

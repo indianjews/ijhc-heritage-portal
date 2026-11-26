@@ -342,6 +342,13 @@ describe('colour contrast (WCAG 1.4.3, and 3:1 for controls)', () => {
     for (const bg of grounds) expect(ratio(token(fg), token(bg)), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
   });
 
+  it('the dropzone: its resting edge and its drag-over edge are at least 3:1, its text 4.5:1 on the drag-over tint', () => {
+    expect(ratio(token('control'), token('paper'))).toBeGreaterThanOrEqual(3);
+    expect(ratio(token('primary-strong'), token('primary-wash'))).toBeGreaterThanOrEqual(3);
+    expect(ratio(token('accent-strong'), token('primary-wash')), 'focus ring on the tint').toBeGreaterThanOrEqual(3);
+    for (const fg of ['ink', 'muted', 'primary-strong']) expect(ratio(token(fg), token('primary-wash')), `${fg} on primary-wash`).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('placeholders use the muted token, not a faint default', () => {
     expect(css).toMatch(/::placeholder\s*\{\s*color:\s*var\(--color-muted\);\s*opacity:\s*1;/);
   });

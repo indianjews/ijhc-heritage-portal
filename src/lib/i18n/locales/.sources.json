@@ -1144,7 +1144,10 @@
     "accounts.window.err.both": "b98ee7fbd94ce674",
     "accounts.window.err.date": "7436097d240d1bbe",
     "accounts.window.err.order": "4d9dcbda97fe4ed1",
-    "accounts.window.err.notPending": "ec5e3cb031fef427"
+    "accounts.window.err.notPending": "ec5e3cb031fef427",
+    "archive.dropPrompt": "df41b48b70846f6d",
+    "bulk.dropPrompt": "ccfca6dee65ab649",
+    "dropzone.release": "18f69fc75017dcc2"
   },
   "hi": {
     "site.name": "e5dadf70da927c9f",
