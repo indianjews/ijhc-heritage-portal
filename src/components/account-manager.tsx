@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArchiveWindowEditor } from '@/components/archive-window-editor';
 import { useMessages } from '@/lib/i18n/provider';
 import { Loader2, Mail, ShieldCheck, UserCheck, UserX } from 'lucide-react';
 import { ROLE_LABELS, type Profile, type UserRole } from '@/lib/types';
@@ -149,6 +150,8 @@ export function AccountManager({ accounts, currentId }: { accounts: Profile[]; c
                     {t('accounts.decline')}
                   </button>
                 )}
+                {/* The archive-upload window (0043): this account only, this screen only. */}
+                <ArchiveWindowEditor profile={profile} />
               </li>
             ))}
           </ul>

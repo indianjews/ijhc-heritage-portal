@@ -358,6 +358,26 @@ export async function setAccountNotices(
 }
 
 /**
+ * A pending account's archive-upload window (0043), set or cleared by an
+ * administrator on their own session — profiles_admin_update allows it and
+ * the check constraint keeps the pair consistent. Only for `pending`: experts
+ * have the screen anyway, and a window on them would read as a restriction.
+ * Returns false when the account is not (or no longer) pending.
+ */
+export async function setArchiveWindow(id: string, from: string | null, until: string | null): Promise<boolean> {
+  const supabase = await createServerSupabase();
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ archive_upload_from: from, archive_upload_until: until })
+    .eq('id', id)
+    .eq('role', 'pending')
+    .select('id')
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
+/**
  * Decline a request outright.
  *
  * Deletes the auth user, which cascades to the profile. The alternative —

@@ -17,6 +17,9 @@ export interface Profile {
   notify_uploads?: boolean;
   /** Mail on every publication to the portal. Administrators; set by an administrator. */
   notify_publications?: boolean;
+  /** A pending account's archive-upload window, inclusive, Israel dates (0043). Set by an administrator. */
+  archive_upload_from?: string | null;
+  archive_upload_until?: string | null;
 }
 
 export interface Item {
