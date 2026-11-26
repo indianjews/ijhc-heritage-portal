@@ -53,6 +53,7 @@ export function MastheadShell({
   language,
   profile,
   queueCount,
+  archiveUpload = false,
 }: {
   /** The mark and the Center's name, as a link home. */
   home: React.ReactNode;
@@ -62,6 +63,8 @@ export function MastheadShell({
   language: React.ReactNode;
   profile: Profile | null;
   queueCount: number;
+  /** A pending account with an archive-upload window open today (0043). */
+  archiveUpload?: boolean;
 }) {
   const t = useMessages();
   const pathname = usePathname();
@@ -179,7 +182,7 @@ export function MastheadShell({
         <div className="shrink-0">{home}</div>
 
         <div className="hidden lg:block">
-          <PrimaryNav layout="bar" />
+          <PrimaryNav layout="bar" archiveUpload={archiveUpload} />
         </div>
 
         <div className="ms-auto flex items-center gap-2 lg:justify-self-end">
@@ -269,7 +272,7 @@ export function MastheadShell({
           className="absolute inset-x-0 top-full max-h-[calc(100dvh-4.25rem)] overflow-y-auto border-b border-rule bg-paper shadow-lift lg:hidden"
         >
           <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-4">
-            <PrimaryNav layout="panel" />
+            <PrimaryNav layout="panel" archiveUpload={archiveUpload} />
             <ArchiveNav profile={profile} queueCount={queueCount} layout="panel" />
             <PendingNotice profile={profile} />
             <div className="border-t border-rule pt-3">

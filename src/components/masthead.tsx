@@ -8,6 +8,7 @@ import { countReviewQueue, getCommunityCounts } from '@/lib/items/queries';
 import { getCurrentProfile } from '@/lib/supabase/server';
 import { listLanguages, requestedLanguage } from '@/lib/translate/languages';
 import { getMessages } from '@/lib/i18n';
+import { archiveUploadAccess, israelToday } from '@/lib/upload/archive-access';
 
 /**
  * The masthead. `MastheadShell` lays it out; this gathers what it shows.
@@ -61,6 +62,8 @@ export async function Masthead() {
       }
       profile={profile}
       queueCount={queueCount}
+      // Experts have it in the Archive menu; this is the pending account's own way in.
+      archiveUpload={archiveUploadAccess(profile, israelToday()) === 'window'}
     />
   );
 }

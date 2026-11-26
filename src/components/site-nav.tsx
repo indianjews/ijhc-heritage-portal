@@ -14,6 +14,7 @@ import {
   FolderPlus,
   Upload,
   MessageSquareWarning,
+  FolderUp,
   UserPlus,
   Users,
   Video,
@@ -57,15 +58,23 @@ const PRIMARY = [
   { href: '/guides', key: 'nav.guides', icon: BookOpen },
 ] as const;
 
-export function PrimaryNav({ layout }: { layout: Layout }) {
+/**
+ * The main bar. `archiveUpload` adds "Archive upload" right after Contribute —
+ * only for a pending account whose window is open today (0043). Experts reach
+ * the same screen from the Archive menu instead.
+ */
+export function PrimaryNav({ layout, archiveUpload = false }: { layout: Layout; archiveUpload?: boolean }) {
   const t = useMessages();
   const pathname = usePathname();
+  const links = archiveUpload
+    ? [PRIMARY[0], PRIMARY[1], { href: '/archive-upload', key: 'nav.archiveUpload', icon: FolderUp } as const, PRIMARY[2]]
+    : PRIMARY;
   return (
     <nav
       aria-label={t('nav.main')}
       className={layout === 'bar' ? 'flex items-center gap-1' : 'flex flex-col gap-1'}
     >
-      {PRIMARY.map(({ href, key, icon: Icon }) => {
+      {links.map(({ href, key, icon: Icon }) => {
         // /upload has archive sub-paths (e.g. /upload/recording) that belong to
       // ArchiveNav; use exact match so they don't keep the contribute link lit.
       const current = href === '/upload' ? pathname === href : pathname.startsWith(href);
@@ -162,6 +171,7 @@ export function ArchiveNav({ profile, queueCount, layout }: NavProps & { layout:
     { href: '/review', label: t('nav.review'), icon: ClipboardCheck, count: queueCount },
     { href: '/review/bulk-upload', label: t('nav.bulkUpload'), icon: Upload },
     { href: '/review/corrections', label: t('nav.corrections'), icon: MessageSquareWarning },
+    { href: '/archive-upload', label: t('nav.archiveUpload'), icon: FolderUp },
     { href: '/upload/recording', label: t('nav.addRecording'), icon: Video },
     { href: '/manage/vocabulary', label: t('nav.keywords'), icon: BookMarked },
     { href: '/manage/families', label: t('nav.families'), icon: Users },

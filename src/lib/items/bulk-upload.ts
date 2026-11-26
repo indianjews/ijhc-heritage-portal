@@ -87,7 +87,7 @@ export function cardErrors(card: CardInput, now = new Date()): Partial<Record<Ca
   return errors;
 }
 
-const BulkFile = z.object({
+export const BulkFile = z.object({
   path: z.string().min(1).max(400),
   /** Proof the path was minted by /api/uploads/sign. See src/lib/files/grant.ts. */
   grant: z.string().min(1).max(200),

@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { fail, invalid, ok, readJson, unexpected } from '@/lib/api';
 import { getCurrentAdmin } from '@/lib/supabase/server';
-import { declineAccount, setAccountNotices, setAccountRole } from '@/lib/vocabulary/mutations';
+import { declineAccount, setAccountNotices, setAccountRole, setArchiveWindow } from '@/lib/vocabulary/mutations';
+import { validateWindow } from '@/lib/upload/archive-access';
 
 /**
  * Approving, demoting, or declining an account. Administrators only.
@@ -23,6 +24,16 @@ const Notices = z
   .object({ notifyUploads: z.boolean().optional(), notifyPublications: z.boolean().optional() })
   .refine((v) => v.notifyUploads !== undefined || v.notifyPublications !== undefined);
 
+/**
+ * A pending account's archive-upload window (0043): both dates, or both null
+ * to close it. Administrators only (here, in profiles_admin_update, and on
+ * the page). Allowed on any pending account; refused for anyone else.
+ */
+const ArchiveWindow = z.object({
+  archiveUploadFrom: z.string().nullable(),
+  archiveUploadUntil: z.string().nullable(),
+}).strict();
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const admin = await getCurrentAdmin();
@@ -30,6 +41,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const { id } = await params;
     const json = await readJson(request);
+
+    const window = ArchiveWindow.safeParse(json);
+    if (window.success) {
+      const { archiveUploadFrom: from, archiveUploadUntil: until } = window.data;
+      const problem = validateWindow(from, until);
+      if (problem) return fail(400, 'invalid_window', problem, { archiveUploadFrom: problem });
+      const saved = await setArchiveWindow(id, from || null, until || null);
+      if (!saved) return fail(409, 'not_pending', 'accounts.window.err.notPending');
+      return ok({ archiveUploadFrom: from || null, archiveUploadUntil: until || null });
+    }
 
     const notices = Notices.safeParse(json);
     if (notices.success) {

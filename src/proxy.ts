@@ -101,6 +101,11 @@ function contentSecurityPolicy(nonce: string, isDev: boolean): string {
   ].join('; ');
 }
 
+/** The archive-upload screen itself (not its no-access page, which must stay reachable). */
+export function isArchiveUpload(pathname: string): boolean {
+  return pathname === '/archive-upload' || (pathname.startsWith('/archive-upload/') && !pathname.startsWith('/archive-upload/no-access'));
+}
+
 export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const csp = contentSecurityPolicy(nonce, process.env.NODE_ENV === 'development');
@@ -141,9 +146,9 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Both closed areas. The pages check the role as well — this only saves a
+  // The closed areas. The pages check the role as well — this only saves a
   // render for someone with no session at all.
-  const closed = ['/review', '/manage'];
+  const closed = ['/review', '/manage', '/archive-upload'];
 
   if (!user && closed.some((path) => request.nextUrl.pathname.startsWith(path))) {
     const url = request.nextUrl.clone();
@@ -155,6 +160,24 @@ export async function proxy(request: NextRequest) {
     const redirect = NextResponse.redirect(url);
     redirect.headers.set('Content-Security-Policy', csp);
     return redirect;
+  }
+
+  // /archive-upload is open to experts always and to a pending account only
+  // inside its window (0043). The database answers; anyone it refuses is
+  // shown the "no access" page under the same address, with a 403, and the
+  // upload screen is never rendered for them. The page and the API ask again.
+  if (user && isArchiveUpload(request.nextUrl.pathname)) {
+    // A definite "no" from the database is refused here. An error (0043 not
+    // applied yet) is left to the page and the route, which keep experts in
+    // and refuse everyone else on their own.
+    const { data: allowed, error } = await supabase.rpc('can_archive_upload');
+    if (!error && allowed !== true) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/archive-upload/no-access';
+      const denied = NextResponse.rewrite(url, { status: 403 });
+      denied.headers.set('Content-Security-Policy', csp);
+      return denied;
+    }
   }
 
   response.headers.set('Content-Security-Policy', csp);

@@ -79,7 +79,16 @@ src/app/                      pages and API routes (App Router)
                               from /review and from the Archive menu (site-nav.tsx, experts/admins only)
   review/corrections/         private problem reports (0042: resolve/dismiss) and public corrections
                               awaiting a decision (from → to diff); linked from /review and the Archive menu
-  manage/                     admin: accounts, bin, families, vocabulary, problems
+  archive-upload/             archive upload by name (component: archive-upload-flow.tsx; rules:
+                              src/lib/upload/archive-pairing.ts): `x__1.jpg`, `x__2.jpg` = one item,
+                              pages in numeric order; `x.txt` = its description and NO AI reading;
+                              without a .txt images/PDFs are `queued` (0041), videos never read;
+                              orphan .txt files warned beside the button. Experts/admins always;
+                              a `pending` account only inside its admin-set window (0043). Linked from
+                              the Archive menu (experts) or the main bar after Contribute (windowed
+                              pending). `no-access/` = the 403 page the proxy rewrites to
+  manage/                     admin: accounts (incl. the archive-upload window editor for pending
+                              accounts, archive-window-editor.tsx), bin, families, vocabulary, problems
   login/, login/forgot, login/reset   sign-in, account request, password reset
   receipt/[id]                contributor's private link (edit while pending)
   corrections/[id]/objection  uploader's "please don't apply this change" page
@@ -121,10 +130,13 @@ src/lib/
   backup/                     off-site backup destinations: s3.ts (SigV4 by hand), drive-files.ts
                               (incremental media copy to Drive files/, 25 MB limit), gdrive-bridge.ts
                               (Apps Script Web App; secret in the JSON body, redacted from every error)
+  upload/                     archive-pairing.ts (pure grouping), archive-access.ts (pure mirror of
+                              can_archive_upload(), Israel date; decides nav only), archive-access-server.ts
+                              (getArchiveUploader: asks the DB), archive-item.ts (route body, Zod)
   rate-limit.ts               in-memory limiter (per instance; good enough against casual spam)
 
-supabase/migrations/          0001…0042, applied in order. Never edit an applied migration.
-tests/unit/                   Vitest (≈554 tests). tests/e2e/ Playwright (permissions, admin).
+supabase/migrations/          0001…0043, applied in order. Never edit an applied migration.
+tests/unit/                   Vitest (≈890 tests). tests/e2e/ Playwright (permissions, admin).
 scripts/                      deploy, backup, seed, translate-ui, backfill-checksums, guides/capture
 docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisions), phase reports
 ```
@@ -147,10 +159,10 @@ docs/                         RUNBOOK (incidents), decisions-2010 (Inon's decisi
 | `record_comments` (+ view `public_record_comments` without email) | public comments | public reads the view; writes only via route |
 | `record_corrections` | proposed corrections, objections | experts only; writes only via route |
 | `record_reports` | private "report a problem" from a record page (reason, details, reporter); open/resolved/dismissed (0042) | experts read and decide; writes only via route; **never** shown publicly, no anon grant |
-| `profiles` | `role` pending/volunteer(=content expert)/admin; notify prefs | — |
+| `profiles` | `role` pending/volunteer(=content expert)/admin; notify prefs; `archive_upload_from`/`archive_upload_until` (dates, both or neither, Israel calendar, inclusive; 0043) | only admins update (`profiles_admin_update`); `can_archive_upload()` reads the window |
 | `problems` | error log with codes (E-XXXXXX) | admins |
 
-Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומחה תוכן**), `admin` (= "super admin"; there is no separate role — Inon's decision 20.10.2026).
+Roles: `pending` (no rights — except `/archive-upload` while an administrator's dated window is open; it never opens `/review`, `/manage`, bulk upload or anyone's items, and what they upload enters as `pending`; see `docs/decisions-archive-upload.md`), `volunteer` (shown as **Content expert / מומחה תוכן**), `admin` (= "super admin"; there is no separate role — Inon's decision 20.10.2026).
 
 ---
 
@@ -165,6 +177,8 @@ Roles: `pending` (no rights), `volunteer` (shown as **Content expert / מומח�
 | `PUT/DELETE /api/items/[id]/draft` | review drafts | expert, own |
 | `/api/items/[id]/duplicates` | not-a-duplicate / merge into older | expert (+0036 rule for published) |
 | `/api/items/[id]/reread`, `/api/cron/reread` | retry a failed reading (cron daily 01:15 UTC, ≤ `AI_RETRY_DAILY`, 3 tries max) | expert / cron secret |
+| `POST /api/items/archive-upload` | one paired item of an archive upload: Zod (`src/lib/upload/archive-item.ts`), granted files only, forces `pending`, no category; `skipAi` (a .txt was found) → description = the text and no reading at all; otherwise images/PDFs `queued`, videos none; windowed accounts are recorded as the contributor and get a receipt link; 503 `migration_required` until 0041 | `getArchiveUploader()` → DB `can_archive_upload()` (0043); proxy rewrites `/archive-upload` to 403 no-access |
+| `PATCH /api/manage/accounts/[id]` `{archiveUploadFrom, archiveUploadUntil}` | set or clear a pending account's archive-upload window; both dates or neither, from ≤ until; 409 if the account is not pending | admin |
 | `POST /api/items/bulk-upload-item` | one item of an expert bulk upload: Zod (`src/lib/items/bulk-upload.ts`, shared with the screen), granted files only, forces `pending`, no category, `uploaded_by` = expert, period/credit from the expert; images and PDFs get a `queued` reading, videos none; 503 `migration_required` until 0041 | expert (`getCurrentVolunteer`) |
 | `GET /api/cron/process-pending-ai` | reads queued analyses at quiet hours (23:30 UTC): skips if ≥ `AI_QUEUE_BUSY_THRESHOLD` live readings in 20 min (`busy`) or if today's Pacific-day usage would eat into `AI_QUEUE_RESERVE` of `AI_DAILY_BUDGET` (`quota_reserve`); ≤ `AI_QUEUE_PER_RUN` per run; sends the expert's notes and an `<attached-media>` note for video/YouTube, never video bytes (`src/lib/items/ai-queue*.ts`) | cron secret + `CRON_HOME=1` |
 | `GET /api/cron/backup` | nightly off-site copy (21:45 UTC): Google Drive via the Apps Script bridge (`src/lib/backup/gdrive-bridge.ts`) when `BACKUP_GDRIVE_*` is set, else S3 (`src/lib/backup/s3.ts`); every table live-counted and read in 1000-row pages; Drive gets a manifest last and keeps 14 runs, then copies media files incrementally to a permanent `files/` folder (`item_files.backed_up_at`, migration 0040; ≤ 20 files and 25 MB each per run; `src/lib/backup/drive-files.ts`) | cron secret + `CRON_HOME=1` |
