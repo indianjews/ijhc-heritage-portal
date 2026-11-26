@@ -35,7 +35,7 @@ export function PasswordRecoveryForm({ reset = false, tokenHash }: { reset?: boo
     } catch { setMessage(t('recovery.retry')); }
     finally { setBusy(false); }
   }
-  const inputClass = 'h-12 w-full rounded-lg border border-rule bg-paper px-4 focus:outline-2 focus:outline-accent';
+  const inputClass = 'h-12 w-full rounded-lg border border-control bg-paper px-4 focus:outline-2 focus:outline-accent';
   return <div className="mx-auto max-w-md px-6 py-16">
     <h1 className="font-display text-3xl">{t(reset ? 'recovery.choose' : 'recovery.title')}</h1>
     {invalid || (reset && !tokenHash) ? <div className="mt-6 space-y-4">

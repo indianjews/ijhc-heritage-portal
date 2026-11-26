@@ -22,7 +22,7 @@ export function CorrectionObjection({ id, token }: { id: string; token: string }
   }}>
     <label className="block"><span className="mb-2 block">{t('public.note')}</span>
       <textarea name="note" maxLength={2000} rows={5} disabled={busy || done} dir="auto"
-        className="min-h-11 w-full rounded-lg border border-rule bg-paper p-3 focus-visible:outline-2 focus-visible:outline-accent-strong" /></label>
+        className="min-h-11 w-full rounded-lg border border-control bg-paper p-3 focus-visible:outline-2 focus-visible:outline-accent-strong" /></label>
     <button className={buttonClass('accent', 'min-h-11 h-auto whitespace-normal py-3')} disabled={busy || done}>{t(busy ? 'public.sending' : 'public.object')}</button>
     <p role="status">{message}</p>
   </form>;

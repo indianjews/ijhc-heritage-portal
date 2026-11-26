@@ -194,12 +194,12 @@ export const en = {
   'legal.contactHeading': "Whom to write to",
   'nav.privacy': "Privacy",
   'nav.terms': "Terms of use",
-  'nav.accessibility': "Accessibility",
+  'nav.accessibility': "Accessibility statement",
   'stats.heading': "Visitor statistics",
   'stats.body': "May the Center count visits to this archive, to see which records people look for? Nothing you send is measured, and saying no changes nothing you can do here.",
   'stats.accept': "Allow",
   'stats.decline': "No thanks",
-  'site.skipToContent': 'Skip to content',
+  'site.skipToContent': "Skip to main content",
 
   'nav.menu': 'menu',
   'nav.openMenu': 'Open the menu',
@@ -1345,6 +1345,11 @@ export const en = {
   'review3.filterUncategorised': "Not yet catalogued",
   'review3.filterShowing': "Showing {shown} of {total}",
   'review3.filterNone': "Nothing in the queue matches.",
+  // Accessibility pass (SI 5568 / WCAG 2.0 AA): names for fields and controls that had none.
+  'login.mode': "Sign in or ask for an account",
+  'link.address': "Address of a web page or video",
+  'vocab.mergeTarget': "Term that “{term}” becomes another spelling of",
+  'review.staleInLanguage': "some translations are out of date",
 } as const;
 
 export type MessageKey = keyof typeof en;

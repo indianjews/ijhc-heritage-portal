@@ -117,7 +117,7 @@ export function VocabularyManager({
               onChange={(e) => setTerm(e.target.value)}
               maxLength={80}
               placeholder="Alibag"
-              className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+              className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30"
             />
           </label>
 
@@ -141,7 +141,7 @@ export function VocabularyManager({
             <select
               value={scope}
               onChange={(e) => setScope(e.target.value as Community | '')}
-              className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:outline-none"
+              className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong"
             >
               <option value="">{t('vocab.everyCommunity')}</option>
               {COMMUNITY_ORDER.map((c) => (
@@ -178,6 +178,7 @@ export function VocabularyManager({
                   <span className="min-w-[8rem] font-medium">{row.term}</span>
                   <BranchSelect
                     value=""
+                    label={t('vocab.placeUnder')}
                     placeholder={t('vocab.placeUnder')}
                     disabled={busyId === row.id}
                     onChange={(branchKey) =>
@@ -320,13 +321,14 @@ export function VocabularyManager({
                             branch. Both spellings keep working; records move to the one you choose.
                           </p>
                           <select
+                            aria-label={t('vocab.mergeTarget', { term: row.term })}
                             defaultValue=""
                             disabled={busyId === row.id}
                             onChange={(e) =>
                               e.target.value &&
                               amend({ action: 'merge', id: row.id, intoId: e.target.value }, row.id)
                             }
-                            className="h-11 w-full rounded-lg border border-rule-strong bg-paper px-3 focus:border-accent-strong focus:outline-none"
+                            className="h-11 w-full rounded-lg border border-rule-strong bg-paper px-3 focus:border-accent-strong"
                           >
                             <option value="">{t('vocab.spellingOf')}</option>
                             {group.terms
@@ -417,11 +419,14 @@ function BranchSelect({
   onChange,
   placeholder,
   disabled,
+  label,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   disabled?: boolean;
+  /** Its accessible name, where no <label> wraps it. */
+  label?: string;
 }) {
   const groups = GROUP_ORDER.map((group) => ({
     group,
@@ -432,10 +437,11 @@ function BranchSelect({
 
   return (
     <select
+      aria-label={label}
       value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
-      className="h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:outline-none disabled:opacity-50"
+      className="h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong disabled:opacity-50"
     >
       <option value="">{placeholder}</option>
       {groups.map((group) => (

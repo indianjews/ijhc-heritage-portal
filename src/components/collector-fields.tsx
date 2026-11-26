@@ -17,7 +17,7 @@ export function CollectorFields({ name, required, onName, onRequired, disabled =
     <label htmlFor={id} className="block">{t('public.collectorName')}</label>
     <input id={id} value={name} onChange={e => onName(e.target.value)} required={required} maxLength={200}
       disabled={disabled} dir="auto" aria-describedby={`${id}-hint`}
-      className="min-h-11 w-full rounded-lg border border-rule bg-paper px-3 focus-visible:outline-2 focus-visible:outline-accent-strong" />
+      className="min-h-11 w-full rounded-lg border border-control bg-paper px-3 focus-visible:outline-2 focus-visible:outline-accent-strong" />
     <p id={`${id}-hint`} className="text-sm text-muted">{t(required && !name.trim() ? 'public.collectorRequired' : 'public.collectorHint')}</p>
   </fieldset>;
 }

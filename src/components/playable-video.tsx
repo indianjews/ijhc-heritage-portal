@@ -27,12 +27,15 @@ export function PlayableVideo({
   src,
   poster,
   label,
+  name,
   className,
 }: {
   src: string;
   poster?: string | null;
   /** What the button says to a screen reader. */
   label: string;
+  /** The recording's own name, for the player once it is playing. */
+  name?: string;
   className?: string;
 }) {
   const video = useRef<HTMLVideoElement>(null);
@@ -53,6 +56,7 @@ export function PlayableVideo({
   return (
     <div {...media.props} className={cn('relative h-full w-full overflow-hidden bg-surface-2', className)}>
       <video
+        aria-label={name ?? label}
         controlsList={media.protectedView ? 'nodownload noremoteplayback' : undefined}
         disablePictureInPicture={media.protectedView}
         disableRemotePlayback={media.protectedView}

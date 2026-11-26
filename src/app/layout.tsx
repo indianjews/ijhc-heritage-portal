@@ -202,7 +202,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       ].join(' ')}>
       <body className="flex min-h-dvh flex-col antialiased">
         <a
-          href="#main"
+          href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:start-3 focus:z-50 focus:rounded-full focus:bg-ink focus:px-5 focus:py-3 focus:font-medium focus:text-paper focus:shadow-lift"
         >
           {t('site.skipToContent')}
@@ -210,7 +210,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <MessagesProvider catalogue={catalogue}>
           <ProblemListener />
           <Masthead />
-          <main id="main" className="flex-1">
+          {/* The one main landmark on every page; pages must not add another.
+              tabIndex -1 lets the skip link move keyboard focus here, not just scroll. */}
+          <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
             {children}
           </main>
         {/*

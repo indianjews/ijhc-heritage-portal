@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Check, Languages } from 'lucide-react';
 import { useMessages } from '@/lib/i18n/provider';
 import { useLanguageLocked } from '@/lib/i18n/language-lock';
@@ -60,13 +60,20 @@ export function LanguagePicker({
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
       if (!box.current?.contains(e.target as Node)) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    // Escape closes and puts focus back on the button that opened the list.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpen(false);
+      trigger.current?.focus();
+    };
     window.addEventListener('pointerdown', onDown);
     window.addEventListener('keydown', onKey);
     return () => {
@@ -90,10 +97,16 @@ export function LanguagePicker({
 
   return (
     <div ref={box} className="relative">
+      {/*
+        A disclosure, not an ARIA menu: role="menu" promises arrow-key
+        navigation and managed focus, and a list of ordinary buttons reached
+        with Tab is what this is. Announced as what it is, it works as heard.
+      */}
       <button
+        ref={trigger}
         type="button"
-        aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
         aria-label={t('language.reading', { language: active.label_native })}
         onClick={() => setOpen((v) => !v)}
         className="flex h-9 items-center gap-2 rounded-full border border-rule px-3 text-muted transition-colors hover:border-accent hover:text-ink"
@@ -104,10 +117,12 @@ export function LanguagePicker({
 
       {open && (
         <div
-          role="menu"
+          id={panelId}
+          role="group"
+          aria-labelledby={`${panelId}-prompt`}
           className="absolute end-0 top-11 z-50 w-56 overflow-hidden rounded-2xl border border-rule bg-paper shadow-lift"
         >
-          <p className="border-b border-rule px-4 py-2.5 text-xs leading-snug text-muted">
+          <p id={`${panelId}-prompt`} className="border-b border-rule px-4 py-2.5 text-xs leading-snug text-muted">
             {t('language.prompt')}
           </p>
           {languages.map((language) => {
@@ -115,8 +130,7 @@ export function LanguagePicker({
             return (
               <button
                 key={language.code}
-                role="menuitemradio"
-                aria-checked={chosen}
+                aria-current={chosen ? 'true' : undefined}
                 type="button"
                 disabled={pending !== null}
                 onClick={() => {

@@ -216,7 +216,7 @@ export function FieldSheet({
               add(e.target.value);
               e.currentTarget.value = '';
             }}
-            className="min-h-64 w-full rounded-lg border border-rule bg-paper px-2 focus:border-accent-strong focus:outline-2 focus:outline-accent-strong [&_option]:min-h-11 [&_option]:py-3"
+            className="min-h-64 w-full rounded-lg border border-control bg-paper px-2 focus:border-accent-strong focus:outline-2 focus:outline-accent-strong [&_option]:min-h-11 [&_option]:py-3"
           >
             <option value="">{t('fields.choose')}</option>
             {GROUP_ORDER.map((group) => {
@@ -266,7 +266,7 @@ function FieldRow({
         value={row.value}
         onChange={(e) => onValue(e.target.value)}
         disabled={disabled}
-        className="h-11 w-full rounded-lg border border-rule bg-paper px-3.5 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none"
+        className="h-11 w-full rounded-lg border border-control bg-paper px-3.5 focus:border-accent-strong focus:bg-accent-wash/30"
       >
         <option value="">{t('common.notDetermined')}</option>
         {(def.options ?? []).map((option) => (
@@ -283,7 +283,7 @@ function FieldRow({
         disabled={disabled}
         maxLength={def.maxLength}
         className={cn(
-          'h-11 w-full rounded-lg border border-rule bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30 focus:outline-none',
+          'h-11 w-full rounded-lg border border-control bg-paper px-4 focus:border-accent-strong focus:bg-accent-wash/30',
           !row.value && 'border-dashed',
         )}
       />

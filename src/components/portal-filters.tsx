@@ -27,7 +27,7 @@ function FilterForm({ view, options, shown, total }: { view: string; options: Fa
   const [email, setEmail] = useState(params.get('contributor') ?? '');
   const activeKeys = [...FACETS, 'q', 'person', 'contributor', 'from', 'to'].filter(key => params.get(key));
   const advanced = [...FACETS.slice(2), 'contributor', 'from', 'to'].some(key => params.has(key));
-  const control = 'min-h-11 w-full min-w-0 rounded-lg border border-rule bg-paper px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-accent-strong';
+  const control = 'min-h-11 w-full min-w-0 rounded-lg border border-control bg-paper px-3 py-2 text-base focus-visible:outline-2 focus-visible:outline-accent-strong';
 
   function apply(changes: Record<string, string | null>) {
     const next = new URLSearchParams(params.toString());

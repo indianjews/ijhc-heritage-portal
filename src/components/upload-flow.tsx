@@ -1059,7 +1059,7 @@ export function UploadFlow({
           <label className="mt-4 block max-w-md">
             <span className="mb-1.5 block font-medium">{t('flow.community')}</span>
             <select value={community} onChange={(e) => setCommunity(e.target.value)} disabled={busy}
-              className="h-11 w-full rounded-lg border border-rule bg-paper px-3 focus:border-accent-strong focus:outline-none">
+              className="h-11 w-full rounded-lg border border-control bg-paper px-3 focus:border-accent-strong">
               <option value="">{t('flow.communityUnknown')}</option>
               {COMMUNITY_ORDER.map((value) => <option key={value} value={value}>{t(communityKey(value))}</option>)}
             </select>
@@ -1190,7 +1190,7 @@ export function UploadFlow({
                 onChange={(e) => setEmail(e.target.value)}
                 aria-invalid={email.trim().length > 0 && !emailOk}
                 className={cn(
-                  'h-14 w-full rounded-lg border bg-paper px-4 text-[1.05rem] focus:outline-none',
+                  'h-14 w-full rounded-lg border bg-paper px-4 text-[1.05rem]',
                   email.trim().length > 0 && !emailOk
                     ? 'border-critical focus:border-critical'
                     : 'border-rule focus:border-accent-strong',
@@ -1217,7 +1217,7 @@ export function UploadFlow({
                 rows={3}
                 maxLength={2000}
                 dir="auto"
-                className="w-full resize-y rounded-lg border border-rule bg-paper px-4 py-3 text-[1.05rem] leading-relaxed focus:border-accent-strong focus:outline-none"
+                className="w-full resize-y rounded-lg border border-control bg-paper px-4 py-3 text-[1.05rem] leading-relaxed focus:border-accent-strong"
               />
               <span className="mt-1 block text-sm text-muted">{t('flow.whatYouKnowHint')}</span>
             </label>
@@ -1264,7 +1264,7 @@ export function UploadFlow({
                 <select
                   value={analysisLang}
                   onChange={(e) => setAnalysisLang(e.target.value)}
-                  className="h-14 w-full rounded-lg border border-rule bg-paper px-4 text-[1.05rem] focus:border-accent-strong focus:outline-none"
+                  className="h-14 w-full rounded-lg border border-control bg-paper px-4 text-[1.05rem] focus:border-accent-strong"
                 >
                   {/*
                     The archive's own languages, not a list beside them. This
@@ -1557,7 +1557,7 @@ function Answerable({
         disabled={disabled || unknown}
         maxLength={200}
         dir="auto"
-        className="h-14 w-full rounded-lg border border-rule bg-paper px-4 text-[1.05rem] focus:border-accent-strong focus:outline-none disabled:bg-paper-2 disabled:text-muted"
+        className="h-14 w-full rounded-lg border border-control bg-paper px-4 text-[1.05rem] focus:border-accent-strong disabled:bg-paper-2 disabled:text-muted"
       />
       {/* The whole row is the target, not the square. */}
       <label

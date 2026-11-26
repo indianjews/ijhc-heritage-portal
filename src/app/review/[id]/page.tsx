@@ -39,9 +39,11 @@ export default async function ReviewItemPage({ params }: { params: Params }) {
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8">
-      <Link href="/review" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <ArrowLeft size={14} /> {t('review.backToQueue')}
+      <Link href="/review" className="mb-6 inline-flex min-h-11 items-center gap-1.5 text-sm text-muted hover:text-ink">
+        <ArrowLeft size={14} aria-hidden className="rtl:rotate-180" /> {t('review.backToQueue')}
       </Link>
+      {/* The title is an editable field below; the page still needs its one h1. */}
+      <h1 className="sr-only" dir="auto">{item.title}</h1>
 
       <ReviewDraftScope><ReviewWorkbench
         item={item}

@@ -88,7 +88,7 @@ export function ReviewBulkTable({ ids, close, completed }: { ids: string[]; clos
             <th scope="row" className="block break-words py-3 text-start font-medium lg:table-cell lg:p-3"><span dir="auto">{row.item.title}</span></th>
             <td className="block py-3 align-top lg:table-cell lg:p-3">
               <label className="block">{t('review3.category')}
-                <select value={row.category} disabled={disabled} onChange={e => patch(row.item.id, { category: e.target.value as ItemCategory | '' })} className="mt-2 min-h-11 w-full rounded-lg border border-rule bg-paper px-2 focus-visible:outline-2">
+                <select value={row.category} disabled={disabled} onChange={e => patch(row.item.id, { category: e.target.value as ItemCategory | '' })} className="mt-2 min-h-11 w-full rounded-lg border border-control bg-paper px-2 focus-visible:outline-2">
                   <option value="">{t('category.none')}</option>
                   {CATEGORIES.map(category => <option key={category} value={category}>{t(categoryKey(category))}</option>)}
                 </select>
@@ -111,7 +111,7 @@ export function ReviewBulkTable({ ids, close, completed }: { ids: string[]; clos
                 onChange={keywords => patch(row.item.id, { keywords })} />
             </td>
             <td className="block py-3 align-top lg:table-cell lg:p-3"><label>{t('review3.access')}
-              <select value={row.access} disabled={disabled} onChange={e => patch(row.item.id, { access: e.target.value as AccessLevel })} className="mt-2 min-h-11 w-full rounded-lg border border-rule bg-paper px-2 focus-visible:outline-2">
+              <select value={row.access} disabled={disabled} onChange={e => patch(row.item.id, { access: e.target.value as AccessLevel })} className="mt-2 min-h-11 w-full rounded-lg border border-control bg-paper px-2 focus-visible:outline-2">
                 {ACCESS_LEVELS.map(access => <option key={access} value={access}>{t(`review3.access.${access}`)}</option>)}
               </select>
             </label></td>

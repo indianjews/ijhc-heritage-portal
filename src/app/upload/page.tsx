@@ -12,6 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function UploadPage() {
+  const { t } = await getMessages();
   /*
    * The archive's own tag list, read on the server and handed down.
    *
@@ -65,6 +66,9 @@ export default async function UploadPage() {
         a meeting, it was the last fifty pixels between the analyse button and
         the bottom of the screen.
       */}
+      {/* The visible title went (above), but every page still needs one h1 for
+          screen-reader users (SI 5568 / WCAG 1.3.1, 2.4.6). Hidden, it costs no pixels. */}
+      <h1 className="sr-only">{t('upload.title')}</h1>
       <UploadFlow
         expert={Boolean(await getCurrentVolunteer())}
         vocabulary={vocabulary}

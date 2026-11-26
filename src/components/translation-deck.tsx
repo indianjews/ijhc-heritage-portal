@@ -242,21 +242,22 @@ export function TranslationDeck({
       </header>
 
       {error && (
-        <p className="mb-4 rounded-lg bg-critical/8 px-4 py-2.5 text-sm text-critical">{error}</p>
+        <p role="alert" className="mb-4 rounded-lg bg-critical/8 px-4 py-2.5 text-sm text-critical">{error}</p>
       )}
 
       {/* The tabs carry their own progress, so a content expert can see at a glance
           which language is short without opening each one. */}
-      <div role="tablist" aria-label={t('review.languagesHeading')} className="mb-4 flex flex-wrap gap-1.5">
+      {/* Pressed buttons in a named group: ARIA tabs would promise tab panels
+          and arrow-key movement that this switcher does not have. */}
+      <div role="group" aria-label={t('review.languagesHeading')} className="mb-4 flex flex-wrap gap-1.5">
         {deck.languages.map((l) => {
           const { done, total, stale } = ready(l.code);
           const on = l.code === active;
           return (
             <button
               key={l.code}
-              role="tab"
               type="button"
-              aria-selected={on}
+              aria-pressed={on}
               onClick={() => setActive(l.code)}
               className={[
                 'flex h-10 items-center gap-2 rounded-full border px-3.5 text-sm transition-colors',
@@ -267,7 +268,7 @@ export function TranslationDeck({
               <span className="machine text-xs">
                 {done}/{total}
               </span>
-              {stale > 0 && <AlertTriangle size={13} className="text-caution" aria-hidden />}
+              {stale > 0 && <><AlertTriangle size={13} className="text-caution" aria-hidden /><span className="sr-only">{t('review.staleInLanguage')}</span></>}
               {done === total && stale === 0 && (
                 <Check size={13} className="text-sage" aria-hidden />
               )}
@@ -311,13 +312,14 @@ export function TranslationDeck({
                 </p>
 
                 <textarea
+                  aria-label={`${t(FIELD_LABEL[row.field] as never)} · ${language.label_native}`}
                   dir={language.rtl ? 'rtl' : 'ltr'}
                   lang={language.code}
                   rows={row.field === 'description' || row.field === 'provenance' ? 3 : 1}
                   value={draft}
                   onChange={(e) => setDrafts((d) => ({ ...d, [key]: e.target.value }))}
                   placeholder={t('review.notTranslatedYet')}
-                  className="w-full rounded-lg border border-rule bg-paper px-3 py-2 leading-relaxed focus:border-accent-strong focus:outline-none"
+                  className="w-full rounded-lg border border-control bg-paper px-3 py-2 leading-relaxed focus:border-accent-strong"
                 />
 
                 {dirty && (
